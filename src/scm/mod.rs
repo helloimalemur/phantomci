@@ -32,7 +32,7 @@ pub fn fetch_pull(repo: &Repo) {
         .arg("stash")
         .output()
     {
-        println!("{}", &output.to_string())
+        eprintln!("ERROR: {}", &output.to_string())
     }
 
     if let Err(output) = Command::new("git")
@@ -42,7 +42,7 @@ pub fn fetch_pull(repo: &Repo) {
         .arg(repo.target_branch.to_string())
         .output()
     {
-        println!("{}", &output.to_string())
+        eprintln!("ERROR: {}", &output.to_string())
     }
 
     if let Err(output) = Command::new("git")
@@ -53,7 +53,7 @@ pub fn fetch_pull(repo: &Repo) {
         .arg("HEAD")
         .output()
     {
-        println!("{}", &output.to_string())
+        eprintln!("ERROR: {}", &output.to_string())
     }
 
     if let Err(output) = Command::new("git")
@@ -62,7 +62,7 @@ pub fn fetch_pull(repo: &Repo) {
         .arg("fetch")
         .output()
     {
-        println!("{}", &output.to_string())
+        eprintln!("ERROR: {}", &output.to_string())
     }
 
     if let Err(output) = Command::new("git")
@@ -71,7 +71,7 @@ pub fn fetch_pull(repo: &Repo) {
         .arg("pull")
         .output()
     {
-        println!("{}", &output.to_string())
+        eprintln!("ERROR: {}", &output.to_string())
     }
 }
 
