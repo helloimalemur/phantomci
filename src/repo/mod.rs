@@ -109,8 +109,6 @@ pub fn get_repo_from_config(config_dir: &String) -> Vec<Repo> {
 }
 
 pub fn create_default_config(path: &String) {
-    println!("Config missing!\nWriting default config ..\n      {}\n\n", path);
-    sleep(Duration::new(3, 0));
     let default_config = r#"
 ##[sys-compare]
 ##path = "https://github.com/helloimalemur/sys-compare"
