@@ -47,13 +47,26 @@ impl AppState {
             let restored = serde_json::from_str::<SerializableState>(&content).unwrap();
             self.deserialize_restore(restored);
         }
+
+        if let Ok(s) = self.repos.lock() {
+            if s.len() > 0 {
+                println!(
+                    "Restored state:\nrepo: {}\n",
+                    s.len(),
+                );
+            }
+        }
     }
 }
 
 pub fn get_state_path() -> String {
     let mut short_stamp = Local::now().timestamp().to_string();
     short_stamp.truncate(8);
-    format!("{}{}", default_repo_work_path(".state".to_string()), short_stamp)
+    format!(
+        "{}{}",
+        default_repo_work_path(".state".to_string()),
+        short_stamp
+    )
 }
 
 pub fn get_previous_state_path() -> String {
@@ -61,9 +74,12 @@ pub fn get_previous_state_path() -> String {
     short_stamp.truncate(8);
     let mut num = short_stamp.parse::<i32>().unwrap();
     num = num - 1;
-    format!("{}{}", default_repo_work_path(".state".to_string()), num.to_string())
+    format!(
+        "{}{}",
+        default_repo_work_path(".state".to_string()),
+        num.to_string()
+    )
 }
-
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct SerializableState {

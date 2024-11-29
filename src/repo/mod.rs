@@ -14,13 +14,13 @@ pub struct Repo {
     pub workflow_file: String,
     pub last_sha: Option<String>,
     pub target_branch: String,
-    pub triggered: bool
+    pub triggered: bool,
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct Repos {
     pub path: String,
-    pub target_branch: Option<String>
+    pub target_branch: Option<String>,
 }
 
 impl Repo {
@@ -48,7 +48,7 @@ impl Repo {
             workflow_file,
             last_sha,
             target_branch,
-            triggered
+            triggered,
         }
     }
 }
@@ -109,7 +109,7 @@ pub fn repo_work_dir(repo: &Repos) -> String {
 
 pub fn prepare(repo: &mut Repo) {
     // clone if not exist
-    env::set_var("GIT_SSH_COMMAND","ssh -o StrictHostKeyChecking=no");
+    env::set_var("GIT_SSH_COMMAND", "ssh -o StrictHostKeyChecking=no");
     if !Path::new(&repo.work_dir).exists() {
         if fs::create_dir_all(Path::new(&repo.work_dir)).is_ok() {
             clone_repo(repo);
@@ -151,20 +151,15 @@ fn get_default_branch(repo: &mut Repo) -> String {
     {
         let lines = output.stdout.lines();
         #[warn(unused_mut)]
-        if let Some(s) = lines.map(|l| {
-            l.unwrap()
-        })
-            .filter(|l| {
-                l.contains("HEAD branch:")
-            })
-            .map(|mut l| {
-                l.replace("HEAD branch:", "")
-            })
-            .next() {
+        if let Some(s) = lines
+            .map(|l| l.unwrap())
+            .filter(|l| l.contains("HEAD branch:"))
+            .map(|mut l| l.replace("HEAD branch:", ""))
+            .next()
+        {
             head_branch = s.trim().to_string();
             println!("Default branch: {}", head_branch);
         }
-
     }
 
     if repo.target_branch.is_empty() {

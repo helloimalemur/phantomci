@@ -30,7 +30,8 @@ pub fn fetch_pull(repo: &Repo) {
         .arg("-C")
         .arg(repo.work_dir.to_string())
         .arg("stash")
-        .output() {
+        .output()
+    {
         println!("{}", &output.to_string())
     }
 
@@ -39,7 +40,8 @@ pub fn fetch_pull(repo: &Repo) {
         .arg(repo.work_dir.to_string())
         .arg("checkout")
         .arg(repo.target_branch.to_string())
-        .output() {
+        .output()
+    {
         println!("{}", &output.to_string())
     }
 
@@ -49,7 +51,8 @@ pub fn fetch_pull(repo: &Repo) {
         .arg("reset")
         .arg("--hard")
         .arg("HEAD")
-        .output() {
+        .output()
+    {
         println!("{}", &output.to_string())
     }
 
@@ -57,7 +60,8 @@ pub fn fetch_pull(repo: &Repo) {
         .arg("-C")
         .arg(repo.work_dir.to_string())
         .arg("fetch")
-        .output() {
+        .output()
+    {
         println!("{}", &output.to_string())
     }
 
@@ -65,11 +69,10 @@ pub fn fetch_pull(repo: &Repo) {
         .arg("-C")
         .arg(repo.work_dir.to_string())
         .arg("pull")
-        .output() {
+        .output()
+    {
         println!("{}", &output.to_string())
     }
-
-
 }
 
 // Check for changes in a repository and handle them
@@ -100,7 +103,10 @@ fn check_repo_triggered(repo: &mut Repo) {
         // Parse workflow file
         // let workflow_path = Path::new(&repo.path).join(&repo.workflow_file);
         repo.triggered = false;
-        let wp = format!("{}workflow.toml", default_repo_work_path(repo.path.split('/').last().unwrap().to_string()));
+        let wp = format!(
+            "{}workflow.toml",
+            default_repo_work_path(repo.path.split('/').last().unwrap().to_string())
+        );
         let workflow_path = Path::new(&wp);
         if workflow_path.exists() {
             parse_workflow(workflow_path.to_str().unwrap(), repo.clone());

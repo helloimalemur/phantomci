@@ -15,9 +15,8 @@ pub fn parse_workflow(file_path: &str, repo: Repo) {
             map.insert(i.0.parse::<usize>().unwrap(), i.1.clone());
         }
         // use btreemap to sort commands
-        map.iter().for_each(|e| {
-            run_command(repo.clone(), e.1.clone())
-        });
+        map.iter()
+            .for_each(|e| run_command(repo.clone(), e.1.clone()));
         println!("========================================================");
         println!("========================================================");
     } else {
@@ -28,11 +27,16 @@ pub fn parse_workflow(file_path: &str, repo: Repo) {
 fn run_command(repo: Repo, command: WorkflowCommand) {
     let root = command.run.split(' ').collect::<Vec<&str>>();
     let args = root[1..].to_vec();
-    println!("Running on {}:\n{}", hostname().unwrap_or_default(), command.run);
+    println!(
+        "Running on {}:\n{}",
+        hostname().unwrap_or_default(),
+        command.run
+    );
     if let Ok(o) = process::Command::new(root[0])
         .args(args)
         .current_dir(repo.work_dir.to_string())
-        .spawn() {
+        .spawn()
+    {
         if let Ok(a) = o.wait_with_output() {
             println!("{}", String::from_utf8_lossy(&a.stdout));
         }
@@ -58,7 +62,7 @@ fn run_command(repo: Repo, command: WorkflowCommand) {
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct WorkflowCommand {
-    run: String
+    run: String,
 }
 
 fn get_command_from_config(path: String) -> HashMap<String, WorkflowCommand> {
