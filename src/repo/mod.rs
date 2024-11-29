@@ -81,7 +81,8 @@ pub fn get_repo_from_config() -> Vec<Repo> {
                 })
             });
             if repos.is_empty() {
-                panic!("Config empty !!")
+                println!("Config empty !!\nUpdate: {}", repo_config);
+                exit(1);
             }
             repos
         } else {
@@ -96,9 +97,9 @@ fn create_default_config(path: &String) {
     println!("Config missing!\nWriting default config ..\n      {}\n\n", path);
     sleep(Duration::new(3, 0));
     let default_config = r#"
-[sys-compare]
-path = "https://github.com/helloimalemur/sys-compare"
-target_branch = "master"
+##[sys-compare]
+##path = "https://github.com/helloimalemur/sys-compare"
+##target_branch = "master"
 "#;
     if let Ok(mut file) = OpenOptions::new()
         .create(true)
