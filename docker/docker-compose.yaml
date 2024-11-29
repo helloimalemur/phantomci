@@ -1,0 +1,13 @@
+version: "3"
+services:
+  phantom_ci:
+#    image: phantomCI
+    container_name: phantom_ci
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+#    volumes:
+#      - app:/var/lib/phantom_ci
+#volumes:
+#  app:
+#    external: true
