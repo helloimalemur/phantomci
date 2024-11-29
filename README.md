@@ -12,8 +12,6 @@ phantom_ci add https://github.com/your/repo.git
 
 ## install systemd service file
 phantom_ci configure service
-
-
 ```
 
 ## ~/.cache/phantomCI/config/Repo.toml
