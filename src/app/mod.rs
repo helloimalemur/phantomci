@@ -42,8 +42,7 @@ impl AppState {
         }
 
         if Path::new(state_path.as_str()).exists() {
-            // println!("State restored: {}", state_path);
-            let content = fs::read_to_string(state_path).unwrap();
+            let content = fs::read_to_string(&state_path).unwrap();
             let restored = serde_json::from_str::<SerializableState>(&content).unwrap();
             self.deserialize_restore(restored);
         }
@@ -51,8 +50,9 @@ impl AppState {
         if let Ok(s) = self.repos.lock() {
             if s.len() > 0 {
                 println!(
-                    "Restored state:\nrepo: {}\n",
+                    "Restored state:\n      repo: {}\n      path: {}\n",
                     s.len(),
+                    state_path,
                 );
             }
         }
