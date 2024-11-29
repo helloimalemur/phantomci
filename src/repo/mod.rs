@@ -177,6 +177,9 @@ fn clone_repo(repo: &Repo) {
         let git_repo_path = format!("{}/.git", repo.work_dir);
         if Path::new(&git_repo_path).exists() {
             println!("Cloned successfully: {}", repo.path);
+        } else {
+            println!("Failed to clone: {}", repo.path);
+            let _ = fs::remove_dir(Path::new(&repo.work_dir));
         }
     }
 }
