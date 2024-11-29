@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, process};
 use std::fs::OpenOptions;
 use std::io::Write;
 
@@ -27,9 +27,18 @@ WantedBy=default.target
 }
 
 pub fn configure_systemd() {
+    let _ = process::Command::new("systemctl")
+        .arg("stop")
+        .arg("phantom_ci")
+        .output();
+
     let service_file = default_systemd_service_dir("phantom_ci".to_string());
     println!("installing service.. {}", &service_file);
+    let _ = fs::remove_file(&service_file);
     if let Err(e) = fs::write(&service_file, default_systemd_service_file()) {
         println!("unable to install {}: {}", &service_file, e);
     }
+
+    println!("\nservice installed\nplease run:\nsystemctl enable phantom_ci\nsystemctl start phantom_ci");
+
 }
