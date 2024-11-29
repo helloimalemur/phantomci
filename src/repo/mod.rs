@@ -3,7 +3,7 @@ use config::Config;
 use std::collections::HashMap;
 use std::io::BufRead;
 use std::path::Path;
-use std::process::Command;
+use std::process::{exit, Command};
 use std::{env, fs};
 
 // Struct to represent a repository
@@ -70,12 +70,15 @@ pub fn get_repo_from_config() -> Vec<Repo> {
                     triggered: false,
                 })
             });
+            if repos.is_empty() {
+                panic!("Config empty !!")
+            }
             repos
         } else {
-            repos
+            panic!("Config not found !!")
         }
     } else {
-        repos
+        panic!("Config not found !!")
     }
 }
 
