@@ -24,9 +24,9 @@ pub fn default_config_path() -> String {
     let mut out = String::new();
     if let Ok(cur_user) = whoami::username() {
         if cur_user.contains("root") {
-            out = "/root/.cache/phantomCI/config/".to_string();
+            out = "/root/.config/phantomCI/".to_string();
         } else {
-            out = format!("/home/{}/.cache/phantomCI/config/", cur_user);
+            out = format!("/home/{}/.config/phantomCI/", cur_user);
         }
         let _ = fs::create_dir_all(Path::new(&out));
     }
