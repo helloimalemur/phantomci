@@ -1,10 +1,15 @@
 use crate::scm::fetch_latest_sha;
 use config::Config;
 use std::collections::HashMap;
-use std::io::BufRead;
+use std::io::{BufRead, Write};
 use std::path::Path;
 use std::process::{exit, Command};
 use std::{env, fs};
+use std::fmt::format;
+use std::fs::OpenOptions;
+use std::thread::sleep;
+use std::time::Duration;
+use crate::app::{default_config_path, default_repo_work_path};
 
 // Struct to represent a repository
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
@@ -54,9 +59,14 @@ impl Repo {
 }
 
 pub fn get_repo_from_config() -> Vec<Repo> {
+    let config_dir = default_config_path();
+    let repo_config = format!("{}Repo.toml", &config_dir);
+    if !Path::new(&repo_config.as_str()).exists() {
+        create_default_config(&repo_config);
+    }
     let mut repos = vec![];
     if let Ok(config_file) = Config::builder()
-        .add_source(config::File::with_name("config/Repo"))
+        .add_source(config::File::with_name(&repo_config.as_str()))
         .build()
     {
         if let Ok(map) = config_file.try_deserialize::<HashMap<String, Repos>>() {
@@ -79,6 +89,22 @@ pub fn get_repo_from_config() -> Vec<Repo> {
         }
     } else {
         panic!("Config not found !!")
+    }
+}
+
+fn create_default_config(path: &String) {
+    println!("Config missing!\nWriting default config ..\n      {}\n\n", path);
+    sleep(Duration::new(3, 0));
+    let default_config = r#"
+[sys-compare]
+path = "https://github.com/helloimalemur/sys-compare"
+target_branch = "master"
+"#;
+    if let Ok(mut file) = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path) {
+        let _ = file.write_all(default_config.as_ref());
     }
 }
 
