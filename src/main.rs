@@ -4,12 +4,12 @@ pub mod repo;
 pub mod scm;
 pub mod options;
 
-use crate::app::{default_config_path, default_repo_work_path, AppState};
-use crate::repo::{get_repo_from_config, prepare, write_repo_to_config, Repo};
+use crate::app::{default_config_path, AppState};
+use crate::options::process_arguments;
+use crate::repo::{get_repo_from_config, prepare};
 use crate::scm::poll_repos;
-use std::time::Duration;
 use clap::Parser;
-use crate::options::{Arguments, Command};
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() {
@@ -28,24 +28,4 @@ async fn main() {
     println!("Starting Git SCM polling...");
     // println!("{}", serde_json::to_string(&state.get_serializable()).unwrap());
     poll_repos(state, Duration::from_secs(15)).await; // Poll every 60 seconds
-}
-
-fn process_arguments(app_state: &mut AppState, config_dir: &String) {
-    let repo_config = format!("{}Repo.toml", config_dir);
-    let arguments = Arguments::parse();
-
-    match arguments.command {
-        None => {}
-        Some(Command::Add { path }) => {
-            if let Some(p) = path {
-                if !p.is_empty() {
-                    println!("Add repo: {}", p);
-                    write_repo_to_config(
-                         Repo::new(p.clone(), default_repo_work_path(p.clone()), "workflow.toml".to_string(), None, "master".to_string(), false)
-                    );
-                }
-            }
-        }
-    }
-
 }

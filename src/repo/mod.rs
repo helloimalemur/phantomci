@@ -1,15 +1,14 @@
+use crate::app::default_config_path;
 use crate::scm::fetch_latest_sha;
 use config::Config;
 use std::collections::HashMap;
+use std::fs::OpenOptions;
 use std::io::{BufRead, Write};
 use std::path::Path;
 use std::process::{exit, Command};
-use std::{env, fs};
-use std::fmt::format;
-use std::fs::OpenOptions;
 use std::thread::sleep;
 use std::time::Duration;
-use crate::app::{default_config_path, default_repo_work_path};
+use std::{env, fs};
 
 // Struct to represent a repository
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
@@ -80,9 +79,6 @@ pub fn write_repo_to_config(repo: Repo) {
 
 pub fn get_repo_from_config(config_dir: &String) -> Vec<Repo> {
     let repo_config = format!("{}Repo.toml", &config_dir);
-    if !Path::new(&repo_config.as_str()).exists() {
-        create_default_config(&repo_config);
-    }
     let mut repos = vec![];
     if let Ok(config_file) = Config::builder()
         .add_source(config::File::with_name(&repo_config.as_str()))
@@ -112,13 +108,14 @@ pub fn get_repo_from_config(config_dir: &String) -> Vec<Repo> {
     }
 }
 
-fn create_default_config(path: &String) {
+pub fn create_default_config(path: &String) {
     println!("Config missing!\nWriting default config ..\n      {}\n\n", path);
     sleep(Duration::new(3, 0));
     let default_config = r#"
 ##[sys-compare]
 ##path = "https://github.com/helloimalemur/sys-compare"
 ##target_branch = "master"
+
 "#;
     if let Ok(mut file) = OpenOptions::new()
         .create(true)
