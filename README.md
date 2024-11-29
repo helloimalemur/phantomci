@@ -7,6 +7,7 @@
 ```shell
 ## run normally
 phantom_ci
+
 ## add repo to config file
 phantom_ci add https://github.com/your/repo.git
 
