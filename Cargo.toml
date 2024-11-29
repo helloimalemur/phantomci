@@ -1,7 +1,10 @@
 [package]
 name = "phantom_ci"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
+description = "Secure Headless Self-Hosted Runner"
+keywords = ["self-hosted", "git", "scm", "cicd"]
+authors = ["james@koonts.net"]
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
