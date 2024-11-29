@@ -25,7 +25,7 @@ path = "https://github.com/helloimalemur/ELKTool"
 target_branch = "master"
 ```
 
-## ./workflow.toml 
+## $TARGET_REPO/workflow.toml 
 ```toml
 [0] ## name must be integer and correspond to the order in which commands are run
 run = "ls -lah" ## command string
