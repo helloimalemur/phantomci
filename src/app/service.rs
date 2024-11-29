@@ -39,6 +39,6 @@ pub fn configure_systemd() {
         println!("unable to install {}: {}", &service_file, e);
     }
 
-    println!("\nservice installed\nplease run:\nsystemctl enable phantom_ci\nsystemctl start phantom_ci");
+    println!("\nservice installed\nplease run:\nsystemctl daemon-reload\nsystemctl enable phantom_ci\nsystemctl start phantom_ci");
 
 }
