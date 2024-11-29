@@ -18,7 +18,7 @@ Group=root
 Type=simple
 RemainAfterExit=no
 Restart=always
-ExecStart=phantom_ci
+ExecStart=/root/.cargo/bin/phantom_ci
 
 [Install]
 WantedBy=default.target
