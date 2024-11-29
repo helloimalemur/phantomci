@@ -3,7 +3,15 @@
 #### Makes zero unnecessary outbound connections, thereby increasing security.
 #### Output is sent to stdout only, by default. (Webhook option in progress.)
 
-## config/Repo.toml
+### Usage
+```shell
+## run normally
+phantom_ci
+## add repo to config file
+phantom_ci add https://github.com/your/repo.git
+```
+
+## ~/.cache/phantomCI/config/Repo.toml
 ```toml
 [sys-compare]
 path = "https://github.com/helloimalemur/sys-compare"
