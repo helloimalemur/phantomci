@@ -39,6 +39,7 @@ impl Repo {
             triggered: false,
         }
     }
+
     pub fn new(
         path: String,
         work_dir: String,
@@ -54,6 +55,25 @@ impl Repo {
             last_sha,
             target_branch,
             triggered,
+        }
+    }
+}
+
+pub fn write_repo_to_config(repo: Repo) {
+    let name = repo.path.split('/').last().unwrap();
+    let config_entry = format!("[{}]\n\
+    path = \"{}\"\n\
+    target_branch = \"master\"\n\n\
+    ", name, repo.path);
+
+    let repo_config = format!("{}Repo.toml", default_config_path());
+    if Path::new(&repo_config.as_str()).exists() {
+        if let Ok(mut f) = OpenOptions::new()
+            .append(true)
+            .open(repo_config) {
+            if let Err(e) = f.write_all(config_entry.as_ref()) {
+                println!("{:?}", e);
+            }
         }
     }
 }

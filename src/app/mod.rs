@@ -1,4 +1,4 @@
-use crate::repo::Repo;
+use crate::repo::{write_repo_to_config, Repo};
 use chrono::Local;
 use std::collections::HashMap;
 use std::fs;

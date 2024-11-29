@@ -4,8 +4,8 @@ pub mod repo;
 pub mod scm;
 pub mod options;
 
-use crate::app::{default_config_path, AppState};
-use crate::repo::{get_repo_from_config, prepare};
+use crate::app::{default_config_path, default_repo_work_path, AppState};
+use crate::repo::{get_repo_from_config, prepare, write_repo_to_config, Repo};
 use crate::scm::poll_repos;
 use std::time::Duration;
 use clap::Parser;
@@ -40,7 +40,9 @@ fn process_arguments(app_state: &mut AppState, config_dir: &String) {
             if let Some(p) = path {
                 if !p.is_empty() {
                     println!("Add repo: {}", p);
-                    // app_state.add_repo()
+                    write_repo_to_config(
+                         Repo::new(p.clone(), default_repo_work_path(p.clone()), "workflow.toml".to_string(), None, "master".to_string(), false)
+                    );
                 }
             }
         }
