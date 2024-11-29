@@ -25,7 +25,7 @@ async fn main() {
 
 
     // println!("{:?}", state);
-    println!("Starting Git SCM polling...");
+    println!("Starting Git SCM polling...\n     config: {}", &config_dir);
     // println!("{}", serde_json::to_string(&state.get_serializable()).unwrap());
     poll_repos(state, Duration::from_secs(15)).await; // Poll every 60 seconds
 }
