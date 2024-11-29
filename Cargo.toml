@@ -5,6 +5,7 @@ edition = "2021"
 description = "Secure Headless Self-Hosted Runner"
 keywords = ["self-hosted", "git", "scm", "cicd"]
 authors = ["james@koonts.net"]
+license = "MIT"
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
