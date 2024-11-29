@@ -671,7 +671,7 @@ dependencies = [
 
 [[package]]
 name = "phantom_ci"
-version = "0.1.15"
+version = "0.1.151"
 dependencies = [
  "chrono",
  "clap",
