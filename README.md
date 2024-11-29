@@ -29,4 +29,4 @@ run = "cargo add tokio --manifest-path testproj/Cargo.toml"
 run = "cargo run --manifest-path testproj/Cargo.toml"
 [6]
 run = "rm -rf testproj/"
-```# phantomCI
+```
