@@ -14,7 +14,7 @@ phantom_ci add https://github.com/your/repo.git
 phantom_ci configure service
 ```
 
-## ~/.cache/phantomCI/config/Repo.toml
+## ~/.config/phantomCI/Repo.toml
 ```toml
 [sys-compare]
 path = "https://github.com/helloimalemur/sys-compare"
