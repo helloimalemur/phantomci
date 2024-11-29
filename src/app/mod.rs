@@ -1,3 +1,5 @@
+pub mod service;
+
 use crate::repo::Repo;
 use chrono::Local;
 use std::collections::HashMap;

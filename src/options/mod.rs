@@ -1,6 +1,8 @@
 use std::path::Path;
+use std::process::exit;
 use clap::{Parser, Subcommand};
 use crate::app::{default_repo_work_path, AppState};
+use crate::app::service::configure_systemd;
 use crate::repo::{create_default_config, write_repo_to_config, Repo};
 
 #[derive(Debug, Clone, Parser)]
@@ -13,7 +15,10 @@ pub struct Arguments {
 pub enum Command {
     Add {
         path: Option<String>,
-    }
+    },
+    Configure {
+        sub: String,
+}
 }
 
 pub fn process_arguments(app_state: &mut AppState, config_dir: &String) {
@@ -32,6 +37,18 @@ pub fn process_arguments(app_state: &mut AppState, config_dir: &String) {
                     write_repo_to_config(
                         Repo::new(p.clone(), default_repo_work_path(p.clone()), "workflow.toml".to_string(), None, "master".to_string(), false)
                     );
+                }
+            }
+        }
+        Some(Command::Configure { sub}) => {
+            match sub.as_str() {
+                "service" => {
+                    configure_systemd();
+                    exit(0);
+                }
+                &_ => {
+                    println!("Invalid subcommand");
+                    exit(1);
                 }
             }
         }
