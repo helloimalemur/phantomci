@@ -10,12 +10,12 @@ The workflow file exists at the root of the repo and would contain your pipeline
 
 This was written with the intention of isolating deployment pipelines from allowing un-owned servers unnecessary access.
 
-Typically, a developer as a few options;
+Typically, a developer has a few options;
 1. allow Github/etc to connect into your servers (allowing inbound connections from unowned servers)
 2. install a self-hosted runner written by Github/etc (allowing outbound connections to unowned servers)
-3. use a 3rd party self-hosted runner that still makes connections to un-owned servers or has an api which may have it's own security vulnerabilities.
+3. use a 3rd party self-hosted runner that still makes connections to un-owned servers or has an api which may have its own security vulnerabilities.
 
-phantom_ci also moves the declaration of the target branch off of the workflow files to it's configuration,
+phantom_ci also moves the declaration of the target branch off of the workflow files to its configuration,
 preventing the branch from which the workflow will run from being tampered with.
 In combination with a restricted target branch we can achieve the most secure posture possible for a self-hosted runner.
 
