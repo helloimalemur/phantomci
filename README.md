@@ -5,6 +5,7 @@
 
 ## Summary
 Phantom CI is a self-hosted runner in that it will detect changes on a repository and process the repository's workflow.toml file.
+All pipeline commands are run locally, as the user from which phantom_ci was installed and ran.
 The workflow file exists at the root of the repo and would contain your pipeline shell commands.
 
 This was written with the intention of isolating deployment pipelines from allowing un-owned servers unnecessary access.
