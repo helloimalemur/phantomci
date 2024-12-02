@@ -9,7 +9,7 @@ The workflow file exists at the root of the repo and would contain your pipeline
 
 This was written with the intention of isolating deployment pipelines from allowing un-owned servers unnecessary access.
 
-Typically a developer as a few options;
+Typically, a developer as a few options;
 1. allow Github/etc to connect into your servers (allowing inbound connections from unowned servers)
 2. install a self-hosted runner written by Github/etc (allowing outbound connections to unowned servers)
 3. use a 3rd party self-hosted runner that still makes connections to un-owned servers or has an api which may have it's own security vulnerabilities.
