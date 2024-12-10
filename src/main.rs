@@ -3,6 +3,7 @@ pub mod parser;
 pub mod repo;
 pub mod scm;
 pub mod options;
+pub mod webhook;
 
 use crate::app::{default_config_path, AppState};
 use crate::options::process_arguments;
