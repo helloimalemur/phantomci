@@ -20,7 +20,9 @@ async fn main() {
     let config_dir = default_config_path();
 
     let env_path = format!("{}.env", config_dir);
-    let _ = dotenv::from_path(Path::new(&env_path));
+    if dotenv::from_path(Path::new(&env_path)).is_ok() {
+        println!("Loaded variables from .env")
+    }
 
 
     let mut state = AppState::new();
