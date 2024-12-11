@@ -45,6 +45,11 @@ path = "https://github.com/helloimalemur/sys-compare"
 path = "https://github.com/helloimalemur/ELKTool"
 target_branch = "master"
 ```
+#### Configuring webhooks
+## ~/.config/phantomCI/.env 
+```dotenv
+DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/...."
+```
 
 ## Installation
 ##### Requires [Rust](https://www.rust-lang.org/tools/install) to be installed
