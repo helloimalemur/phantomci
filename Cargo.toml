@@ -1,6 +1,6 @@
 [package]
 name = "phantom_ci"
-version = "0.1.159"
+version = "0.1.160"
 edition = "2021"
 description = "Secure Headless Self-Hosted Runner"
 keywords = ["self-hosted", "git", "scm", "cicd"]
