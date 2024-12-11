@@ -3,11 +3,15 @@ use config::Config;
 use std::collections::{BTreeMap, HashMap};
 use std::{fs, process};
 use whoami::hostname;
+use crate::app::default_config_path;
+use crate::webhook::{Webhook, WebhookConfig, WebhookType};
 
 // Parse the workflow file
 pub fn parse_workflow(file_path: &str, repo: Repo) {
     if let Ok(content) = fs::read_to_string(file_path) {
-        println!("Parsing workflow: {}", repo.path);
+        let starting_message = format!("Starting Workflow: {}\nTarget Branch: {}", repo.path, repo.target_branch);
+        println!("{}", starting_message);
+        repo.send_webhook(starting_message, &repo);
         // println!("Parsed workflow file: \n{}", content);
         let commands = get_command_from_config((&file_path).to_string());
         let mut map = BTreeMap::<usize, WorkflowCommand>::new();
