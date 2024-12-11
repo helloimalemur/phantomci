@@ -59,20 +59,13 @@ impl Repo {
     }
 
     pub fn send_webhook(&self, message: String, repo: &Repo) {
-        let config_path = default_config_path();
-        if let Ok(config) = Config::builder()
-            .add_source(config::File::with_name(&config_path))
-            .build() {
-            if let Ok(map) = config.try_deserialize::<HashMap<String, String>>() {
-                let title = repo.path.split('/').last().unwrap_or(repo.path.as_str());
+        let title = repo.path.split('/').last().unwrap_or(repo.path.as_str());
 
-                if let Ok(discord_url) = env::var("DISCORD_WEBHOOK_URL") {
-                    Webhook::new(WebhookConfig::new(title, discord_url.as_str(), WebhookType::Discord, &message));
-                }
-                if let Ok(slack_url) = env::var("SLACK_WEBHOOK_URL") {
-                    Webhook::new(WebhookConfig::new(title, slack_url.as_str(), WebhookType::Slack, &message));
-                }
-            }
+        if let Ok(discord_url) = env::var("DISCORD_WEBHOOK_URL") {
+            Webhook::new(WebhookConfig::new(title, discord_url.as_str(), WebhookType::Discord, &message));
+        }
+        if let Ok(slack_url) = env::var("SLACK_WEBHOOK_URL") {
+            Webhook::new(WebhookConfig::new(title, slack_url.as_str(), WebhookType::Slack, &message));
         }
     }
 }
