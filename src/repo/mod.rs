@@ -62,10 +62,12 @@ impl Repo {
         let title = repo.path.split('/').last().unwrap_or(repo.path.as_str());
 
         if let Ok(discord_url) = env::var("DISCORD_WEBHOOK_URL") {
-            Webhook::new(WebhookConfig::new(title, discord_url.as_str(), WebhookType::Discord, &message));
+            let webhook = Webhook::new(WebhookConfig::new(title, discord_url.as_str(), WebhookType::Discord, &message));
+            webhook.send();
         }
         if let Ok(slack_url) = env::var("SLACK_WEBHOOK_URL") {
-            Webhook::new(WebhookConfig::new(title, slack_url.as_str(), WebhookType::Slack, &message));
+            let webhook = Webhook::new(WebhookConfig::new(title, slack_url.as_str(), WebhookType::Slack, &message));
+            webhook.send();
         }
     }
 }
