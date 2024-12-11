@@ -45,7 +45,7 @@ fn run_command(repo: Repo, command: WorkflowCommand) {
     {
         if let Ok(a) = o.wait_with_output() {
             println!("{}", String::from_utf8_lossy(&a.stdout));
-            // repo.send_webhook(String::from_utf8_lossy(&a.stdout).to_string(), &repo)
+            // repo.send_webhook(String::from_utf8_lossy(&a.stdout).to_string(), &repo).await // troubleshooting
         }
     }
 }
