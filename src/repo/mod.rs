@@ -119,7 +119,6 @@ pub fn get_repo_from_config(config_dir: &String) -> Vec<Repo> {
                 println!("Config empty !!\nUpdate: {}", repo_config);
                 exit(1);
             }
-            // println!("{:?}", repos);
             repos
         } else {
             panic!("Config not found !!")

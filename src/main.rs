@@ -31,7 +31,7 @@ async fn main() {
 
     get_repo_from_config(&config_dir).iter_mut().for_each(|mut repo| {
         prepare(&mut repo);
-        state.add_repo(repo.path.to_string(), repo.to_owned())
+        state.add_repo(repo.clone().name, repo.to_owned())
     });
 
 
