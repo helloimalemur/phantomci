@@ -64,11 +64,14 @@ impl Repo {
             .add_source(config::File::with_name(&config_path))
             .build() {
             if let Ok(map) = config.try_deserialize::<HashMap<String, String>>() {
-                let discord_url = map.get(&"discord_url".to_owned()).map(|v| v.to_owned());
-                let slack_url = map.get(&"slack_url".to_owned()).map(|v| v.to_owned());
+                let title = repo.path.split('/').last().unwrap_or(repo.path.as_str());
+                if let Some(discord_url) = map.get(&"discord_url".to_owned()).map(|v| v.to_owned()) {
+                    Webhook::new(WebhookConfig::new(title, discord_url.as_str(), WebhookType::Discord, &message));
+                }
+                if let Some(slack_url) = map.get(&"slack_url".to_owned()).map(|v| v.to_owned()) {
+                    Webhook::new(WebhookConfig::new(title, slack_url.as_str(), WebhookType::Slack, &message));
+                }
             }
-
-            Webhook::new(WebhookConfig::new("", "", WebhookType::Discord, ""));
         }
     }
 }
