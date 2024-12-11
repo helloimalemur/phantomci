@@ -1,3 +1,4 @@
+use discord_webhook_lib::send_discord;
 
 pub enum WebhookType {
     Discord,
@@ -33,8 +34,14 @@ impl Webhook {
     pub fn send(&self) {
         match self.webhook_config.webhook_type {
             WebhookType::Discord => {
-                println!("Discord webhook url: {}", self.webhook_config.url);
-                let _ = discord_webhook_lib::send_discord(self.webhook_config.url.as_str(), self.webhook_config.message.as_str(), self.webhook_config.title.as_str());
+                if let Ok(rt) = tokio::runtime::Runtime::new() {
+                    if let Err(e) = rt.block_on(
+                        send_discord(self.webhook_config.url.as_str(), self.webhook_config.message.as_str(), self.webhook_config.title.as_str())
+                    ) {
+                        eprintln!("{}", e);
+                    }
+
+                }
             }
             WebhookType::Slack => {}
             WebhookType::Custom => {}
