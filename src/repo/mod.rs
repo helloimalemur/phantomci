@@ -20,16 +20,12 @@ pub struct Repo {
     pub last_sha: Option<String>,
     pub target_branch: String,
     pub triggered: bool,
-    pub discord_url: Option<String>,
-    pub slack_url: Option<String>,
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct Repos {
     pub path: String,
     pub target_branch: Option<String>,
-    pub discord_url: Option<String>,
-    pub slack_url: Option<String>,
 }
 
 impl Repo {
@@ -41,8 +37,6 @@ impl Repo {
             last_sha: None,
             target_branch: "master".to_string(),
             triggered: false,
-            discord_url: None,
-            slack_url: None,
         }
     }
 
@@ -53,8 +47,6 @@ impl Repo {
         last_sha: Option<String>,
         target_branch: String,
         triggered: bool,
-        discord_url: String,
-        slack_url: String,
     ) -> Repo {
         Repo {
             path,
@@ -63,8 +55,6 @@ impl Repo {
             last_sha,
             target_branch,
             triggered,
-            discord_url: None,
-            slack_url: None,
         }
     }
 
@@ -75,10 +65,11 @@ impl Repo {
             .build() {
             if let Ok(map) = config.try_deserialize::<HashMap<String, String>>() {
                 let title = repo.path.split('/').last().unwrap_or(repo.path.as_str());
-                if let Some(discord_url) = map.get(&"discord_url".to_owned()).map(|v| v.to_owned()) {
+
+                if let Ok(discord_url) = env::var("DISCORD_WEBHOOK_URL") {
                     Webhook::new(WebhookConfig::new(title, discord_url.as_str(), WebhookType::Discord, &message));
                 }
-                if let Some(slack_url) = map.get(&"slack_url".to_owned()).map(|v| v.to_owned()) {
+                if let Ok(slack_url) = env::var("SLACK_WEBHOOK_URL") {
                     Webhook::new(WebhookConfig::new(title, slack_url.as_str(), WebhookType::Slack, &message));
                 }
             }
@@ -119,10 +110,8 @@ pub fn get_repo_from_config(config_dir: &String) -> Vec<Repo> {
                     work_dir: repo_work_dir(r.1),
                     workflow_file: "workflow.toml".to_string(),
                     last_sha: None,
-                    target_branch: r.1.clone().target_branch.unwrap_or("master".to_string()),
+                    target_branch: r.1.to_owned().target_branch.unwrap_or("master".to_string()),
                     triggered: false,
-                    discord_url: Some(r.1.clone().discord_url.unwrap_or("".to_string())),
-                    slack_url: Some(r.1.clone().slack_url.unwrap_or("".to_string())),
                 })
             });
             if repos.is_empty() {
