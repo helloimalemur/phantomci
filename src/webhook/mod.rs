@@ -1,22 +1,39 @@
 
-enum WebhookType {
+pub enum WebhookType {
     Discord,
     Slack,
     Custom,
 }
 
-struct WebhookConfig {
+pub struct WebhookConfig {
+    title: String,
     url: String,
-    webhook_type: WebhookType
+    pub webhook_type: WebhookType,
+    message: String,
 }
 
 impl WebhookConfig {
-    pub fn new(url: String, webhook_type: WebhookType) -> WebhookConfig {
-        WebhookConfig { url, webhook_type }
+    pub fn new(title: String, url: String, webhook_type: WebhookType, message: String) -> WebhookConfig {
+        WebhookConfig { title, url, webhook_type, message }
     }
 }
 
 
-struct Webhook {
-    webhook_config: WebhookConfig
+pub struct Webhook {
+    pub webhook_config: WebhookConfig,
+    fired: bool,
+    successful: bool,
+}
+
+impl Webhook {
+    pub fn new(config: WebhookConfig) -> Webhook {Webhook{ webhook_config: config, fired: false, successful: false }}
+    pub fn send(&self) {
+        match self.webhook_config.webhook_type {
+            WebhookType::Discord => {
+                let _ = discord_webhook_lib::send_discord(self.webhook_config.url.as_str(), self.webhook_config.message.as_str(), self.webhook_config.title.as_str());
+            }
+            WebhookType::Slack => {}
+            WebhookType::Custom => {}
+        }
+    }
 }
