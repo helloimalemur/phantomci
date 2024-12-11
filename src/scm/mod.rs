@@ -98,7 +98,7 @@ fn check_repo_changes(repo: &mut Repo) {
 }
 
 // Check for changes in a repository and handle them
-fn check_repo_triggered(repo: &mut Repo) {
+async fn check_repo_triggered(repo: &mut Repo) {
     if repo.triggered {
         // Parse workflow file
         // let workflow_path = Path::new(&repo.path).join(&repo.workflow_file);
@@ -109,7 +109,7 @@ fn check_repo_triggered(repo: &mut Repo) {
         );
         let workflow_path = Path::new(&wp);
         if workflow_path.exists() {
-            parse_workflow(workflow_path.to_str().unwrap(), repo.to_owned());
+            parse_workflow(workflow_path.to_str().unwrap(), repo.to_owned()).await;
         } else {
             eprintln!(
                 "Workflow file not found at {}",
@@ -128,7 +128,7 @@ pub async fn poll_repos(state: AppState, interval_duration: Duration) {
         let mut repos = state.repos.lock().unwrap().to_owned();
         for (_, repo) in repos.iter_mut() {
             check_repo_changes(repo);
-            check_repo_triggered(repo);
+            check_repo_triggered(repo).await
         }
         state.repos.lock().unwrap().clone_from(&repos);
         state.save_state();
