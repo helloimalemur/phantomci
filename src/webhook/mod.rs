@@ -33,6 +33,7 @@ impl Webhook {
     pub fn send(&self) {
         match self.webhook_config.webhook_type {
             WebhookType::Discord => {
+                println!("Discord webhook url: {}", self.webhook_config.url);
                 let _ = discord_webhook_lib::send_discord(self.webhook_config.url.as_str(), self.webhook_config.message.as_str(), self.webhook_config.title.as_str());
             }
             WebhookType::Slack => {}
@@ -43,11 +44,15 @@ impl Webhook {
 
 #[cfg(test)]
 mod tests {
-    use crate::webhook::{WebhookConfig, WebhookType};
+    use std::env;
+    use crate::webhook::{Webhook, WebhookConfig, WebhookType};
 
     #[test]
     fn send_discord_webhook() {
-        let url = "https://discord.com/api/webhooks/1252648442447265823/XFsq_y6hzLSxj24bbWlikcfhPJ8MGStOUjOi0vgJT83-ZLTRrcLTOqWulrIwgmlBjj6l";
-        let webhook_config = WebhookConfig::new("test webhook", url, WebhookType::Discord, "hello world");
+        if let Ok(wh_url) = env::var("DISCORD_WEBHOOK_URL") {
+            let webhook_config = WebhookConfig::new("test webhook", wh_url, WebhookType::Discord, "hello world");
+            let webhook = Webhook::new(webhook_config);
+            webhook.send();
+        }
     }
 }
