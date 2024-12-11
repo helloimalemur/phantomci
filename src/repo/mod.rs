@@ -22,23 +22,6 @@ pub struct Repo {
     pub triggered: bool,
 }
 
-impl Repo {
-    pub fn send_webhook(message: String, repo: &Repo) {
-        let config_path = default_config_path();
-        if let Ok(config) = Config::builder()
-            .add_source(config::File::with_name(&config_path))
-            .build() {
-            if let Ok(map) = config.try_deserialize::<HashMap<String, String>>() {
-                let discord_url = map.get(&"discord_url".to_owned()).map(|v| v.to_owned());
-                let slack_url = map.get(&"slack_url".to_owned()).map(|v| v.to_owned());
-            }
-
-            Webhook::new(WebhookConfig::new("", "", WebhookType::Discord, ""));
-        }
-
-    }
-}
-
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct Repos {
     pub path: String,
@@ -72,6 +55,20 @@ impl Repo {
             last_sha,
             target_branch,
             triggered,
+        }
+    }
+
+    pub fn send_webhook(&self, message: String, repo: &Repo) {
+        let config_path = default_config_path();
+        if let Ok(config) = Config::builder()
+            .add_source(config::File::with_name(&config_path))
+            .build() {
+            if let Ok(map) = config.try_deserialize::<HashMap<String, String>>() {
+                let discord_url = map.get(&"discord_url".to_owned()).map(|v| v.to_owned());
+                let slack_url = map.get(&"slack_url".to_owned()).map(|v| v.to_owned());
+            }
+
+            Webhook::new(WebhookConfig::new("", "", WebhookType::Discord, ""));
         }
     }
 }
