@@ -13,7 +13,10 @@ pub struct WebhookConfig {
 }
 
 impl WebhookConfig {
-    pub fn new(title: String, url: String, webhook_type: WebhookType, message: String) -> WebhookConfig {
+    pub fn new(title: &str, url: &str, webhook_type: WebhookType, message: &str) -> WebhookConfig {
+        let title = title.to_string();
+        let url = url.to_string();
+        let message = message.to_string();
         WebhookConfig { title, url, webhook_type, message }
     }
 }
@@ -35,5 +38,16 @@ impl Webhook {
             WebhookType::Slack => {}
             WebhookType::Custom => {}
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::webhook::{WebhookConfig, WebhookType};
+
+    #[test]
+    fn send_discord_webhook() {
+        let url = "https://discord.com/api/webhooks/1252648442447265823/XFsq_y6hzLSxj24bbWlikcfhPJ8MGStOUjOi0vgJT83-ZLTRrcLTOqWulrIwgmlBjj6l";
+        let webhook_config = WebhookConfig::new("test webhook", url, WebhookType::Discord, "hello world");
     }
 }
