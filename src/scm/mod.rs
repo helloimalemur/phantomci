@@ -104,8 +104,9 @@ async fn check_repo_triggered(repo: &mut Repo) {
         // let workflow_path = Path::new(&repo.path).join(&repo.workflow_file);
         repo.triggered = false;
         let wp = format!(
-            "{}workflow.toml",
-            default_repo_work_path(repo.path.split('/').last().unwrap().to_string())
+            "{}workflow/{}.toml",
+            default_repo_work_path(repo.path.split('/').last().unwrap().to_string()),
+            repo.target_branch
         );
         let workflow_path = Path::new(&wp);
         if workflow_path.exists() {
