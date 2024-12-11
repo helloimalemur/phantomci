@@ -5,16 +5,24 @@ pub mod scm;
 pub mod options;
 pub mod webhook;
 
+use std::path::Path;
+use std::process::exit;
 use crate::app::{default_config_path, AppState};
 use crate::options::process_arguments;
 use crate::repo::{get_repo_from_config, prepare};
 use crate::scm::poll_repos;
 use clap::Parser;
 use std::time::Duration;
+use dotenv::dotenv;
 
 #[tokio::main]
 async fn main() {
     let config_dir = default_config_path();
+
+    let env_path = format!("{}.env", config_dir);
+    let _ = dotenv::from_path(Path::new(&env_path));
+
+
     let mut state = AppState::new();
     state.restore_state();
     process_arguments(&mut state, &config_dir);
