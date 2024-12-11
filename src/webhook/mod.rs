@@ -31,16 +31,13 @@ pub struct Webhook {
 
 impl Webhook {
     pub fn new(config: WebhookConfig) -> Webhook {Webhook{ webhook_config: config, fired: false, successful: false }}
-    pub fn send(&self) {
+    pub async fn send(&self) {
         match self.webhook_config.webhook_type {
             WebhookType::Discord => {
                 if let Ok(rt) = tokio::runtime::Runtime::new() {
-                    if let Err(e) = rt.block_on(
-                        send_discord(self.webhook_config.url.as_str(), self.webhook_config.message.as_str(), self.webhook_config.title.as_str())
-                    ) {
-                        eprintln!("{}", e);
+                    if let Err(e) = send_discord(self.webhook_config.url.as_str(), self.webhook_config.message.as_str(), self.webhook_config.title.as_str()).await {
+                        eprintln!("{}", e)
                     }
-
                 }
             }
             WebhookType::Slack => {}
