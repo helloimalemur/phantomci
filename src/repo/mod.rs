@@ -14,6 +14,7 @@ use crate::webhook::{Webhook, WebhookConfig, WebhookType};
 // Struct to represent a repository
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct Repo {
+    pub name: String,
     pub path: String,
     pub work_dir: String,
     pub workflow_file: String,
@@ -31,6 +32,7 @@ pub struct Repos {
 impl Repo {
     pub fn default() -> Repo {
         Repo {
+            name: "".to_string(),
             path: "".to_string(),
             work_dir: "".to_string(),
             workflow_file: "".to_string(),
@@ -41,6 +43,7 @@ impl Repo {
     }
 
     pub fn new(
+        name: String,
         path: String,
         work_dir: String,
         workflow_file: String,
@@ -49,6 +52,7 @@ impl Repo {
         triggered: bool,
     ) -> Repo {
         Repo {
+            name,
             path,
             work_dir,
             workflow_file,
@@ -100,7 +104,9 @@ pub fn get_repo_from_config(config_dir: &String) -> Vec<Repo> {
     {
         if let Ok(map) = config_file.try_deserialize::<HashMap<String, Repos>>() {
             map.iter().for_each(|r| {
+                // println!("{:?}", r);
                 repos.push(Repo {
+                    name: r.0.to_string(),
                     path: r.1.path.to_string(),
                     work_dir: repo_work_dir(r.1),
                     workflow_file: "workflow.toml".to_string(),
@@ -113,6 +119,7 @@ pub fn get_repo_from_config(config_dir: &String) -> Vec<Repo> {
                 println!("Config empty !!\nUpdate: {}", repo_config);
                 exit(1);
             }
+            // println!("{:?}", repos);
             repos
         } else {
             panic!("Config not found !!")
