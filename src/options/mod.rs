@@ -35,7 +35,7 @@ pub fn process_arguments(app_state: &mut AppState, config_dir: &String) {
                 if !p.is_empty() {
                     println!("Add repo: {}", p);
                     write_repo_to_config(
-                        Repo::new(p.to_owned(), default_repo_work_path(p.to_owned()), "workflow.toml".to_string(), None, "master".to_string(), false)
+                        Repo::new(p.to_owned(), default_repo_work_path(p.to_owned()), "workflow.toml".to_string(), None, "master".to_string(), false, "".to_string(), "".to_string())
                     );
                 }
             }
