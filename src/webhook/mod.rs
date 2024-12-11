@@ -50,7 +50,7 @@ mod tests {
     #[test]
     fn send_discord_webhook() {
         if let Ok(wh_url) = env::var("DISCORD_WEBHOOK_URL") {
-            let webhook_config = WebhookConfig::new("test webhook", wh_url, WebhookType::Discord, "hello world");
+            let webhook_config = WebhookConfig::new("test webhook", wh_url.as_str(), WebhookType::Discord, "hello world");
             let webhook = Webhook::new(webhook_config);
             webhook.send();
         }
