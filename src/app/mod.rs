@@ -110,7 +110,7 @@ impl AppState {
     }
     pub fn get_serializable(&self) -> SerializableState {
         SerializableState {
-            repos: self.repos.lock().unwrap().clone(),
+            repos: self.repos.lock().unwrap().to_owned(),
         }
     }
     pub fn deserialize_restore(&mut self, state: SerializableState) {
@@ -128,7 +128,7 @@ pub fn save_state(app_state: SerializableState) {
 
     let path_old = get_previous_state_path();
 
-    let mut dir_only = path.clone();
+    let mut dir_only = path.to_owned();
     dir_only = dir_only.replace(path.split('/').last().unwrap(), "");
 
     if let Err(_e) = fs::create_dir_all(Path::new(dir_only.as_str())) {

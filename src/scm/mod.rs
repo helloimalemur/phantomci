@@ -86,7 +86,7 @@ fn check_repo_changes(repo: &mut Repo) {
                 repo.path, latest_sha
             );
 
-            repo.last_sha = Some(latest_sha.clone());
+            repo.last_sha = Some(latest_sha.to_owned());
 
             repo.triggered = true;
 
@@ -109,7 +109,7 @@ fn check_repo_triggered(repo: &mut Repo) {
         );
         let workflow_path = Path::new(&wp);
         if workflow_path.exists() {
-            parse_workflow(workflow_path.to_str().unwrap(), repo.clone());
+            parse_workflow(workflow_path.to_str().unwrap(), repo.to_owned());
         } else {
             eprintln!(
                 "Workflow file not found at {}",
@@ -125,7 +125,7 @@ pub async fn poll_repos(state: AppState, interval_duration: Duration) {
 
     loop {
         ticker.tick().await;
-        let mut repos = state.repos.lock().unwrap().clone();
+        let mut repos = state.repos.lock().unwrap().to_owned();
         for (_, repo) in repos.iter_mut() {
             check_repo_changes(repo);
             check_repo_triggered(repo);

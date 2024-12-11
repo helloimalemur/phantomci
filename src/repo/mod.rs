@@ -91,7 +91,7 @@ pub fn get_repo_from_config(config_dir: &String) -> Vec<Repo> {
                     work_dir: repo_work_dir(r.1),
                     workflow_file: "workflow.toml".to_string(),
                     last_sha: None,
-                    target_branch: r.1.clone().target_branch.unwrap_or("master".to_string()),
+                    target_branch: r.1.to_owned().target_branch.unwrap_or("master".to_string()),
                     triggered: false,
                 })
             });
@@ -187,7 +187,7 @@ fn get_default_branch(repo: &mut Repo) -> String {
 
     if let Ok(output) = Command::new("git")
         .arg("-C")
-        .arg(repo.work_dir.clone())
+        .arg(repo.work_dir.to_owned())
         .arg("remote")
         .arg("show")
         .arg(repo.path.to_string())
@@ -207,7 +207,7 @@ fn get_default_branch(repo: &mut Repo) -> String {
     }
 
     if repo.target_branch.is_empty() {
-        repo.target_branch = head_branch.clone();
+        repo.target_branch = head_branch.to_owned();
     }
 
     head_branch
