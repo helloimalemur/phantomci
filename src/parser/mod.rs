@@ -20,7 +20,9 @@ pub async fn parse_workflow(file_path: &str, repo: Repo) {
         }
         // use btreemap to sort commands
         map.iter()
-            .for_each(|e| run_command(repo.to_owned(), e.1.to_owned()));
+            .for_each( async |e| {
+                run_command(repo.to_owned(), e.1.to_owned()).await
+            });
         println!("========================================================");
         println!("========================================================");
     } else {
@@ -28,7 +30,7 @@ pub async fn parse_workflow(file_path: &str, repo: Repo) {
     }
 }
 
-fn run_command(repo: Repo, command: WorkflowCommand) {
+async fn run_command(repo: Repo, command: WorkflowCommand) {
     let root = command.run.split(' ').collect::<Vec<&str>>();
     let args = root[1..].to_vec();
     println!(
@@ -43,24 +45,8 @@ fn run_command(repo: Repo, command: WorkflowCommand) {
     {
         if let Ok(a) = o.wait_with_output() {
             println!("{}", String::from_utf8_lossy(&a.stdout));
+            repo.send_webhook(String::from_utf8_lossy(&a.stdout).to_string(), &repo).await
         }
-        // if let Some(stdout) = o.stdout {
-        //     let mut reader = BufReader::new(stdout);
-        //     let then = Local::now();
-        //     let mut sec_past = 0i64;
-        //     while !reader.buffer().is_empty() && sec_past > 10 {
-        //         sec_past = Local::now().signed_duration_since(then).num_seconds();
-        //         // println!("{}",
-        //         // for (a,e) in reader.buffer().iter().enumerate() {
-        //         //     println!("{}", e.to_string())
-        //         // }
-        //         for (ind, line) in BufRead::lines(reader.buffer()).enumerate() {
-        //             if let Ok(li) =  line {
-        //                 println!("{}", li)
-        //             }
-        //         }
-        //     }
-        // }
     }
 }
 
