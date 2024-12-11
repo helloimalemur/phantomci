@@ -25,7 +25,7 @@ Please use branch restrictions on the target_branch to prevent unauthorized comm
 To solve the obvious issue of receiving notifications when a job fails or to receive job output for debugging, all output of running commands is sent to stdout. (please do not output passwords to stdout).
 A webhook option with varying levels of verbosity is also up for consideration.
 
-## $TARGET_REPO/workflow.toml
+## $TARGET_REPO/workflow/master.toml
 ```toml
 [0] ## name must be integer and correspond to the order in which commands are run
 run = "pwd" ## command string
