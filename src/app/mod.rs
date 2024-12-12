@@ -19,6 +19,12 @@ pub struct AppState {
     pub repos: Arc<Mutex<HashMap<String, Repo>>>,
 }
 
+impl Default for AppState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AppState {
     pub fn new() -> Self {
         Self {
