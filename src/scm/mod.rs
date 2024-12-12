@@ -13,7 +13,7 @@ pub fn fetch_latest_sha(repo: &Repo) -> Option<String> {
     fetch_pull(repo);
     let output = Command::new("git")
         .arg("-C")
-        .arg(repo.work_dir.to_string())
+        .arg(&repo.work_dir)
         .arg("rev-parse")
         .arg("HEAD")
         .output();
@@ -29,7 +29,7 @@ pub fn fetch_latest_sha(repo: &Repo) -> Option<String> {
 pub fn fetch_pull(repo: &Repo) {
     if let Err(output) = Command::new("git")
         .arg("-C")
-        .arg(repo.work_dir.to_string())
+        .arg(&repo.work_dir)
         .arg("stash")
         .output()
     {
@@ -38,9 +38,9 @@ pub fn fetch_pull(repo: &Repo) {
 
     if let Err(output) = Command::new("git")
         .arg("-C")
-        .arg(repo.work_dir.to_string())
+        .arg(&repo.work_dir)
         .arg("checkout")
-        .arg(repo.target_branch.to_string())
+        .arg(&repo.target_branch)
         .output()
     {
         eprintln!("ERROR: {}", &output.to_string())
@@ -48,7 +48,7 @@ pub fn fetch_pull(repo: &Repo) {
 
     if let Err(output) = Command::new("git")
         .arg("-C")
-        .arg(repo.work_dir.to_string())
+        .arg(&repo.work_dir)
         .arg("reset")
         .arg("--hard")
         .arg("HEAD")
@@ -59,7 +59,7 @@ pub fn fetch_pull(repo: &Repo) {
 
     if let Err(output) = Command::new("git")
         .arg("-C")
-        .arg(repo.work_dir.to_string())
+        .arg(&repo.work_dir)
         .arg("fetch")
         .output()
     {
@@ -68,7 +68,7 @@ pub fn fetch_pull(repo: &Repo) {
 
     if let Err(output) = Command::new("git")
         .arg("-C")
-        .arg(repo.work_dir.to_string())
+        .arg(&repo.work_dir)
         .arg("pull")
         .output()
     {
@@ -78,7 +78,7 @@ pub fn fetch_pull(repo: &Repo) {
 
 // Check for changes in a repository and handle them
 fn check_repo_changes(repo: &mut Repo) {
-    if let Some(latest_sha) = fetch_latest_sha(&repo) {
+    if let Some(latest_sha) = fetch_latest_sha(repo) {
         if repo.last_sha.as_ref() != Some(&latest_sha) {
             println!("========================================================");
             println!("{}", Local::now().format("%Y-%m-%d %H:%M:%S"));
