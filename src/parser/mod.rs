@@ -8,8 +8,8 @@ use whoami::hostname;
 pub async fn parse_workflow(file_path: &str, repo: Repo) {
     if let Ok(content) = fs::read_to_string(file_path) {
         let starting_message = format!(
-            "Starting Workflow: {}\nTarget Branch: {}",
-            repo.path, repo.target_branch
+            "Starting Workflow: {}\nTarget Branch: {}\nHost: {}",
+            repo.path, repo.target_branch, hostname().unwrap_or_default()
         );
         println!("{}", starting_message);
         repo.send_webhook(starting_message, &repo).await;
