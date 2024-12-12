@@ -1,13 +1,12 @@
-use std::{fs, process};
-use std::fs::OpenOptions;
 use std::io::Write;
+use std::{fs, process};
 
 fn default_systemd_service_dir(f: String) -> String {
     format!("/usr/lib/systemd/system/{}.service", f)
 }
 
 fn default_systemd_service_file() -> &'static str {
-    let x = r#"
+    r#"
 [Unit]
 Description=phantom_ci
 After=network.target
@@ -22,8 +21,7 @@ ExecStart=/root/.cargo/bin/phantom_ci
 
 [Install]
 WantedBy=default.target
-"#;
-    x
+"#
 }
 
 pub fn configure_systemd() {
@@ -40,5 +38,4 @@ pub fn configure_systemd() {
     }
 
     println!("\nservice installed\nplease run:\nsystemctl daemon-reload\nsystemctl enable phantom_ci\nsystemctl start phantom_ci");
-
 }

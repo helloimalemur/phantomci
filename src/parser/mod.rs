@@ -3,26 +3,27 @@ use config::Config;
 use std::collections::{BTreeMap, HashMap};
 use std::{fs, process};
 use whoami::hostname;
-use crate::app::default_config_path;
-use crate::webhook::{Webhook, WebhookConfig, WebhookType};
 
 // Parse the workflow file
 pub async fn parse_workflow(file_path: &str, repo: Repo) {
     if let Ok(content) = fs::read_to_string(file_path) {
-        let starting_message = format!("Starting Workflow: {}\nTarget Branch: {}", repo.path, repo.target_branch);
+        let starting_message = format!(
+            "Starting Workflow: {}\nTarget Branch: {}",
+            repo.path, repo.target_branch
+        );
         println!("{}", starting_message);
         repo.send_webhook(starting_message, &repo).await;
-        // println!("Parsed workflow file: \n{}", content);
+
         let commands = get_command_from_config((&file_path).to_string());
         let mut map = BTreeMap::<usize, WorkflowCommand>::new();
         for i in commands {
             map.insert(i.0.parse::<usize>().unwrap(), i.1.to_owned());
         }
         // use btreemap to sort commands
-        map.iter()
-            .for_each( |e| {
-                run_command(repo.to_owned(), e.1.to_owned())
-            });
+        for e in map.iter() {
+            run_command(repo.to_owned(), e.1.to_owned()).await
+        }
+
         println!("========================================================");
         println!("========================================================");
     } else {
@@ -30,7 +31,7 @@ pub async fn parse_workflow(file_path: &str, repo: Repo) {
     }
 }
 
-fn run_command(repo: Repo, command: WorkflowCommand) {
+async fn run_command(repo: Repo, command: WorkflowCommand) {
     let root = command.run.split(' ').collect::<Vec<&str>>();
     let args = root[1..].to_vec();
     println!(
@@ -44,8 +45,9 @@ fn run_command(repo: Repo, command: WorkflowCommand) {
         .spawn()
     {
         if let Ok(a) = o.wait_with_output() {
-            println!("{}", String::from_utf8_lossy(&a.stdout));
-            // repo.send_webhook(String::from_utf8_lossy(&a.stdout).to_string(), &repo).await // troubleshooting
+            let output = String::from_utf8_lossy(&a.stdout);
+            println!("{}", &output);
+            repo.send_webhook(output.to_string(), &repo).await // troubleshooting
         }
     }
 }

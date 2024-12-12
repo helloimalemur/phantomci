@@ -18,10 +18,14 @@ impl WebhookConfig {
         let title = title.to_string();
         let url = url.to_string();
         let message = message.to_string();
-        WebhookConfig { title, url, webhook_type, message }
+        WebhookConfig {
+            title,
+            url,
+            webhook_type,
+            message,
+        }
     }
 }
-
 
 pub struct Webhook {
     pub webhook_config: WebhookConfig,
@@ -30,11 +34,23 @@ pub struct Webhook {
 }
 
 impl Webhook {
-    pub fn new(config: WebhookConfig) -> Webhook {Webhook{ webhook_config: config, fired: false, successful: false }}
+    pub fn new(config: WebhookConfig) -> Webhook {
+        Webhook {
+            webhook_config: config,
+            fired: false,
+            successful: false,
+        }
+    }
     pub async fn send(&self) {
         match self.webhook_config.webhook_type {
             WebhookType::Discord => {
-                if let Err(e) = send_discord(self.webhook_config.url.as_str(), self.webhook_config.message.as_str(), self.webhook_config.title.as_str()).await {
+                if let Err(e) = send_discord(
+                    self.webhook_config.url.as_str(),
+                    self.webhook_config.message.as_str(),
+                    self.webhook_config.title.as_str(),
+                )
+                .await
+                {
                     eprintln!("{}", e)
                 }
             }
@@ -46,14 +62,19 @@ impl Webhook {
 
 #[cfg(test)]
 mod tests {
-    use std::env;
     use crate::webhook::{Webhook, WebhookConfig, WebhookType};
+    use std::env;
 
     #[test]
-    fn send_discord_webhook() {
+    async fn send_discord_webhook() {
         if let Ok(wh_url) = env::var("DISCORD_WEBHOOK_URL") {
-            let webhook = Webhook::new(WebhookConfig::new("test webhook", wh_url.as_str(), WebhookType::Discord, "hello world"));
-            webhook.send();
+            let webhook = Webhook::new(WebhookConfig::new(
+                "test webhook",
+                wh_url.as_str(),
+                WebhookType::Discord,
+                "hello world",
+            ));
+            webhook.send().await;
         }
     }
 }
