@@ -20,6 +20,11 @@ pub struct AppState {
 }
 
 impl AppState {
+    pub fn new() -> Self {
+        Self {
+            repos: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
     pub fn save_state(&self) {
         save_state(self.get_serializable());
     }
@@ -45,11 +50,6 @@ impl AppState {
                     state_path,
                 );
             }
-        }
-    }
-    pub fn new() -> Self {
-        Self {
-            repos: Arc::new(Mutex::new(HashMap::new())),
         }
     }
     pub fn get_serializable(&self) -> SerializableState {
