@@ -1,5 +1,5 @@
-use std::{fs, process};
 use std::io::Write;
+use std::{fs, process};
 
 fn default_systemd_service_dir(f: String) -> String {
     format!("/usr/lib/systemd/system/{}.service", f)
@@ -39,5 +39,4 @@ pub fn configure_systemd() {
     }
 
     println!("\nservice installed\nplease run:\nsystemctl daemon-reload\nsystemctl enable phantom_ci\nsystemctl start phantom_ci");
-
 }

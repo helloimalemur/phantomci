@@ -7,7 +7,10 @@ use whoami::hostname;
 // Parse the workflow file
 pub async fn parse_workflow(file_path: &str, repo: Repo) {
     if let Ok(content) = fs::read_to_string(file_path) {
-        let starting_message = format!("Starting Workflow: {}\nTarget Branch: {}", repo.path, repo.target_branch);
+        let starting_message = format!(
+            "Starting Workflow: {}\nTarget Branch: {}",
+            repo.path, repo.target_branch
+        );
         println!("{}", starting_message);
         repo.send_webhook(starting_message, &repo).await;
         // println!("Parsed workflow file: \n{}", content);
@@ -20,9 +23,9 @@ pub async fn parse_workflow(file_path: &str, repo: Repo) {
         for e in map.iter() {
             run_command(repo.to_owned(), e.1.to_owned()).await
         }
-            // .for_each( |e| {
-            //     run_command(repo.to_owned(), e.1.to_owned())
-            // });
+        // .for_each( |e| {
+        //     run_command(repo.to_owned(), e.1.to_owned())
+        // });
         println!("========================================================");
         println!("========================================================");
     } else {

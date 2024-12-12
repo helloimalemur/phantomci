@@ -1,10 +1,10 @@
+use crate::app::SerializableState;
+use crate::util::default_repo_work_path;
+use chrono::Local;
 use std::fs;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::Path;
-use chrono::Local;
-use crate::app::SerializableState;
-use crate::util::default_repo_work_path;
 
 pub fn get_state_path() -> String {
     let mut short_stamp = Local::now().timestamp().to_string();

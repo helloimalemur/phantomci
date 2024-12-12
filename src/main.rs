@@ -1,20 +1,20 @@
 pub mod app;
+pub mod options;
 pub mod parser;
 pub mod repo;
 pub mod scm;
-pub mod options;
-pub mod webhook;
 pub mod util;
+pub mod webhook;
 
-use std::path::Path;
-use std::process::exit;
-use crate::app::{AppState};
+use crate::app::AppState;
 use crate::options::process_arguments;
 use crate::repo::{get_repo_from_config, prepare};
 use crate::scm::poll_repos;
-use clap::Parser;
-use std::time::Duration;
 use crate::util::default_config_path;
+use clap::Parser;
+use std::path::Path;
+use std::process::exit;
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() {
@@ -25,16 +25,16 @@ async fn main() {
         println!("Loaded variables from .env")
     }
 
-
     let mut state = AppState::new();
     state.restore_state();
     process_arguments(&mut state, &config_dir);
 
-    get_repo_from_config(&config_dir).iter_mut().for_each(|mut repo| {
-        prepare(&mut repo);
-        state.add_repo(repo.clone().name, repo.to_owned())
-    });
-
+    get_repo_from_config(&config_dir)
+        .iter_mut()
+        .for_each(|mut repo| {
+            prepare(&mut repo);
+            state.add_repo(repo.clone().name, repo.to_owned())
+        });
 
     // println!("{:?}", state);
     println!("Starting Git SCM polling...\n     config: {}", &config_dir);

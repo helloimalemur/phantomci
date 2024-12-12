@@ -1,4 +1,6 @@
 use crate::scm::fetch_latest_sha;
+use crate::util::default_config_path;
+use crate::webhook::{Webhook, WebhookConfig, WebhookType};
 use config::Config;
 use std::collections::HashMap;
 use std::fs::OpenOptions;
@@ -8,8 +10,6 @@ use std::process::{exit, Command};
 use std::thread::sleep;
 use std::time::Duration;
 use std::{env, fs};
-use crate::util::default_config_path;
-use crate::webhook::{Webhook, WebhookConfig, WebhookType};
 
 // Struct to represent a repository
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
@@ -66,11 +66,21 @@ impl Repo {
         let title = repo.path.split('/').last().unwrap_or(repo.path.as_str());
 
         if let Ok(discord_url) = env::var("DISCORD_WEBHOOK_URL") {
-            let webhook = Webhook::new(WebhookConfig::new(title, discord_url.as_str(), WebhookType::Discord, &message));
+            let webhook = Webhook::new(WebhookConfig::new(
+                title,
+                discord_url.as_str(),
+                WebhookType::Discord,
+                &message,
+            ));
             webhook.send().await;
         }
         if let Ok(slack_url) = env::var("SLACK_WEBHOOK_URL") {
-            let webhook = Webhook::new(WebhookConfig::new(title, slack_url.as_str(), WebhookType::Slack, &message));
+            let webhook = Webhook::new(WebhookConfig::new(
+                title,
+                slack_url.as_str(),
+                WebhookType::Slack,
+                &message,
+            ));
             webhook.send().await;
         }
     }
@@ -78,16 +88,17 @@ impl Repo {
 
 pub fn write_repo_to_config(repo: Repo) {
     let name = repo.path.split('/').last().unwrap();
-    let config_entry = format!("[{}]\n\
+    let config_entry = format!(
+        "[{}]\n\
     path = \"{}\"\n\
     target_branch = \"master\"\n\n\
-    ", name, repo.path);
+    ",
+        name, repo.path
+    );
 
     let repo_config = format!("{}Repo.toml", default_config_path());
     if Path::new(&repo_config.as_str()).exists() {
-        if let Ok(mut f) = OpenOptions::new()
-            .append(true)
-            .open(repo_config) {
+        if let Ok(mut f) = OpenOptions::new().append(true).open(repo_config) {
             if let Err(e) = f.write_all(config_entry.as_ref()) {
                 println!("{:?}", e);
             }
@@ -135,10 +146,7 @@ pub fn create_default_config(path: &String) {
 ##target_branch = "master"
 
 "#;
-    if let Ok(mut file) = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(path) {
+    if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(path) {
         let _ = file.write_all(default_config.as_ref());
     }
 }
