@@ -40,10 +40,16 @@ run = "make deploy"
 ```toml
 [sys-compare]
 path = "https://github.com/helloimalemur/sys-compare"
+target_branch = "master"
 
 [elktool]
 path = "https://github.com/helloimalemur/ELKTool"
 target_branch = "master"
+
+[elktool2] ## section header cannot be the same as another entry
+path = "git@github.com:helloimalemur/ELKTool" ## ssh is the recommended protocol to use
+target_branch = "test-branch" ## ensure branch exists [issue #3]
+
 ```
 #### Configuring webhooks
 ## ~/.config/phantomCI/.env 
