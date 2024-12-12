@@ -6,31 +6,27 @@ use whoami::hostname;
 
 // Parse the workflow file
 pub async fn parse_workflow(file_path: &str, repo: Repo) {
-    if let Ok(content) = fs::read_to_string(file_path) {
-        let starting_message = format!(
-            "Starting Workflow: {}\nTarget Branch: {}\nHost: {}",
-            repo.path,
-            repo.target_branch,
-            hostname().unwrap_or_default()
-        );
-        println!("{}", starting_message);
-        repo.send_webhook(starting_message, &repo).await;
+    let starting_message = format!(
+        "Starting Workflow: {}\nTarget Branch: {}\nHost: {}",
+        repo.path,
+        repo.target_branch,
+        hostname().unwrap_or_default()
+    );
+    println!("{}", starting_message);
+    repo.send_webhook(starting_message, &repo).await;
 
-        let commands = get_command_from_config((&file_path).to_string());
-        let mut map = BTreeMap::<usize, WorkflowCommand>::new();
-        for i in commands {
-            map.insert(i.0.parse::<usize>().unwrap(), i.1.to_owned());
-        }
-        // use btreemap to sort commands
-        for e in map.iter() {
-            run_command(repo.to_owned(), e.1.to_owned()).await
-        }
-
-        println!("========================================================");
-        println!("========================================================");
-    } else {
-        eprintln!("Failed to read workflow file at {}", file_path);
+    let commands = get_command_from_config((&file_path).to_string());
+    let mut map = BTreeMap::<usize, WorkflowCommand>::new();
+    for i in commands {
+        map.insert(i.0.parse::<usize>().unwrap(), i.1.to_owned());
     }
+    // use btreemap to sort commands
+    for e in map.iter() {
+        run_command(repo.to_owned(), e.1.to_owned()).await
+    }
+
+    println!("========================================================");
+    println!("========================================================");
 }
 
 async fn run_command(repo: Repo, command: WorkflowCommand) {
