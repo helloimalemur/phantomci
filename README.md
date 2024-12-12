@@ -1,7 +1,7 @@
 ## phantomCI
 ### Secure Headless Self-Hosted Runner
 #### Makes zero unnecessary outbound connections, thereby increasing security.
-#### Output is sent to stdout only, by default. (Webhook option in progress.)
+#### Output is sent to stdout only, by default, with the option to enable webhook notifications.
 
 ## Summary
 Phantom CI is a self-hosted runner in that it will detect changes on a repository and process the repository's workflow.toml file.
