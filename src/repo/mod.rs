@@ -7,8 +7,6 @@ use std::fs::OpenOptions;
 use std::io::{BufRead, Write};
 use std::path::Path;
 use std::process::{exit, Command};
-use std::thread::sleep;
-use std::time::Duration;
 use std::{env, fs};
 
 // Struct to represent a repository
