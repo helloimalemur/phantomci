@@ -1,5 +1,3 @@
-pub mod service;
-
 use crate::repo::Repo;
 use chrono::Local;
 use std::collections::HashMap;
@@ -8,34 +6,14 @@ use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
-
-pub fn default_repo_work_path(repo_name: String) -> String {
-    let mut out = String::new();
-    if let Ok(cur_user) = whoami::username() {
-        if cur_user.contains("root") {
-            out = format!("/root/.cache/phantomCI/{}/", repo_name);
-        } else {
-            out = format!("/home/{}/.cache/phantomCI/{}/", cur_user, repo_name);
-        }
-        let _ = fs::create_dir_all(Path::new(&out));
-    }
-    out
-}
-
-pub fn default_config_path() -> String {
-    let mut out = String::new();
-    if let Ok(cur_user) = whoami::username() {
-        if cur_user.contains("root") {
-            out = "/root/.config/phantomCI/".to_string();
-        } else {
-            out = format!("/home/{}/.config/phantomCI/", cur_user);
-        }
-        let _ = fs::create_dir_all(Path::new(&out));
-    }
-    out
-}
+use crate::util::default_repo_work_path;
 
 // Struct to hold application state
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct SerializableState {
+    pub repos: HashMap<String, Repo>,
+}
+
 #[derive(Debug, Clone)]
 pub struct AppState {
     pub repos: Arc<Mutex<HashMap<String, Repo>>>,
@@ -45,9 +23,6 @@ impl AppState {
     pub fn save_state(&self) {
         save_state(self.get_serializable());
     }
-}
-
-impl AppState {
     pub fn restore_state(&mut self) {
         #[warn(unused_assignments)]
         let mut state_path = String::new();
@@ -72,7 +47,26 @@ impl AppState {
             }
         }
     }
+    pub fn new() -> Self {
+        Self {
+            repos: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
+    pub fn get_serializable(&self) -> SerializableState {
+        SerializableState {
+            repos: self.repos.lock().unwrap().to_owned(),
+        }
+    }
+    pub fn deserialize_restore(&mut self, state: SerializableState) {
+        self.repos.lock().unwrap().clone_from(&state.repos)
+    }
+
+    // Add a new repository
+    pub fn add_repo(&self, name: String, repo: Repo) {
+        self.repos.lock().unwrap().insert(name, repo);
+    }
 }
+
 
 pub fn get_state_path() -> String {
     let mut short_stamp = Local::now().timestamp().to_string();
@@ -94,33 +88,6 @@ pub fn get_previous_state_path() -> String {
         default_repo_work_path(".state".to_string()),
         num.to_string()
     )
-}
-
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct SerializableState {
-    pub repos: HashMap<String, Repo>,
-}
-
-impl AppState {
-    // Initialize a new AppState
-    pub fn new() -> Self {
-        Self {
-            repos: Arc::new(Mutex::new(HashMap::new())),
-        }
-    }
-    pub fn get_serializable(&self) -> SerializableState {
-        SerializableState {
-            repos: self.repos.lock().unwrap().to_owned(),
-        }
-    }
-    pub fn deserialize_restore(&mut self, state: SerializableState) {
-        self.repos.lock().unwrap().clone_from(&state.repos)
-    }
-
-    // Add a new repository
-    pub fn add_repo(&self, name: String, repo: Repo) {
-        self.repos.lock().unwrap().insert(name, repo);
-    }
 }
 
 pub fn save_state(app_state: SerializableState) {

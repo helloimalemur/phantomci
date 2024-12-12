@@ -1,5 +1,4 @@
 use std::{fs, process};
-use std::fs::OpenOptions;
 use std::io::Write;
 
 fn default_systemd_service_dir(f: String) -> String {

@@ -1,4 +1,3 @@
-use crate::app::{default_repo_work_path, AppState};
 use crate::parser::parse_workflow;
 use crate::repo::Repo;
 use chrono::Local;
@@ -6,6 +5,8 @@ use std::path::Path;
 use std::process::Command;
 use std::time::Duration;
 use tokio::time::interval;
+use crate::app::AppState;
+use crate::util::default_repo_work_path;
 
 // Fetch the latest commit hash for a given repository
 pub fn fetch_latest_sha(repo: &Repo) -> Option<String> {

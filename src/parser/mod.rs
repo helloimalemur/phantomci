@@ -3,8 +3,6 @@ use config::Config;
 use std::collections::{BTreeMap, HashMap};
 use std::{fs, process};
 use whoami::hostname;
-use crate::app::default_config_path;
-use crate::webhook::{Webhook, WebhookConfig, WebhookType};
 
 // Parse the workflow file
 pub async fn parse_workflow(file_path: &str, repo: Repo) {

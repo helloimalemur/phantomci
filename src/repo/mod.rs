@@ -1,4 +1,3 @@
-use crate::app::default_config_path;
 use crate::scm::fetch_latest_sha;
 use config::Config;
 use std::collections::HashMap;
@@ -9,6 +8,7 @@ use std::process::{exit, Command};
 use std::thread::sleep;
 use std::time::Duration;
 use std::{env, fs};
+use crate::util::default_config_path;
 use crate::webhook::{Webhook, WebhookConfig, WebhookType};
 
 // Struct to represent a repository

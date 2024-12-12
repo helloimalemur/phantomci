@@ -4,16 +4,17 @@ pub mod repo;
 pub mod scm;
 pub mod options;
 pub mod webhook;
+pub mod util;
 
 use std::path::Path;
 use std::process::exit;
-use crate::app::{default_config_path, AppState};
+use crate::app::{AppState};
 use crate::options::process_arguments;
 use crate::repo::{get_repo_from_config, prepare};
 use crate::scm::poll_repos;
 use clap::Parser;
 use std::time::Duration;
-use dotenv::dotenv;
+use crate::util::default_config_path;
 
 #[tokio::main]
 async fn main() {
