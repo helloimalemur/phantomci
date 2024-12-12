@@ -6,7 +6,7 @@ fn default_systemd_service_dir(f: String) -> String {
 }
 
 fn default_systemd_service_file() -> &'static str {
-    let x = r#"
+    r#"
 [Unit]
 Description=phantom_ci
 After=network.target
@@ -21,8 +21,7 @@ ExecStart=/root/.cargo/bin/phantom_ci
 
 [Install]
 WantedBy=default.target
-"#;
-    x
+"#
 }
 
 pub fn configure_systemd() {
