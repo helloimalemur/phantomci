@@ -83,5 +83,5 @@ phantom_ci configure service
 
 ## Development and Collaboration
 #### Feel free to open a pull request
-    echo "Run clippy"; cargo clippy -- -D clippy::all
-    echo "Format source code"; cargo fmt -- --check
+    cargo clippy -- -D clippy::all
+    cargo fmt -- --check
