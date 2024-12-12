@@ -20,11 +20,11 @@ pub fn get_previous_state_path() -> String {
     let mut short_stamp = Local::now().timestamp().to_string();
     short_stamp.truncate(8);
     let mut num = short_stamp.parse::<i32>().unwrap();
-    num = num - 1;
+    num -= 1;
     format!(
         "{}{}",
         default_repo_work_path(".state".to_string()),
-        num.to_string()
+        num
     )
 }
 

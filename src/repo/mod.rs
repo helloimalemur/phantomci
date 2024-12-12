@@ -179,11 +179,9 @@ pub fn repo_work_dir(repo: &Repos) -> String {
 pub fn prepare(repo: &mut Repo) {
     // clone if not exist
     env::set_var("GIT_SSH_COMMAND", "ssh -o StrictHostKeyChecking=no");
-    if !Path::new(&repo.work_dir).exists() {
-        if fs::create_dir_all(Path::new(&repo.work_dir)).is_ok() {
-            clone_repo(repo);
-            get_default_branch(repo);
-        }
+    if !Path::new(&repo.work_dir).exists() && fs::create_dir_all(Path::new(&repo.work_dir)).is_ok() {
+        clone_repo(repo);
+        get_default_branch(repo);
     }
 
     repo.last_sha = fetch_latest_sha(repo)

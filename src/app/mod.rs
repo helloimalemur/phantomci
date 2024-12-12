@@ -4,7 +4,6 @@ use crate::app::state::{get_previous_state_path, get_state_path, save_state};
 use crate::repo::Repo;
 use std::collections::HashMap;
 use std::fs;
-use std::io::Write;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
