@@ -50,10 +50,10 @@ mod tests {
     use crate::webhook::{Webhook, WebhookConfig, WebhookType};
 
     #[test]
-    fn send_discord_webhook() {
+    async fn send_discord_webhook() {
         if let Ok(wh_url) = env::var("DISCORD_WEBHOOK_URL") {
             let webhook = Webhook::new(WebhookConfig::new("test webhook", wh_url.as_str(), WebhookType::Discord, "hello world"));
-            webhook.send();
+            webhook.send().await;
         }
     }
 }

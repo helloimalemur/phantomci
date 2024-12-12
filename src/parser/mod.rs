@@ -17,10 +17,12 @@ pub async fn parse_workflow(file_path: &str, repo: Repo) {
             map.insert(i.0.parse::<usize>().unwrap(), i.1.to_owned());
         }
         // use btreemap to sort commands
-        map.iter()
-            .for_each( |e| {
-                run_command(repo.to_owned(), e.1.to_owned())
-            });
+        for e in map.iter() {
+            run_command(repo.to_owned(), e.1.to_owned()).await
+        }
+            // .for_each( |e| {
+            //     run_command(repo.to_owned(), e.1.to_owned())
+            // });
         println!("========================================================");
         println!("========================================================");
     } else {
@@ -28,7 +30,7 @@ pub async fn parse_workflow(file_path: &str, repo: Repo) {
     }
 }
 
-fn run_command(repo: Repo, command: WorkflowCommand) {
+async fn run_command(repo: Repo, command: WorkflowCommand) {
     let root = command.run.split(' ').collect::<Vec<&str>>();
     let args = root[1..].to_vec();
     println!(
@@ -42,8 +44,9 @@ fn run_command(repo: Repo, command: WorkflowCommand) {
         .spawn()
     {
         if let Ok(a) = o.wait_with_output() {
-            println!("{}", String::from_utf8_lossy(&a.stdout));
-            // repo.send_webhook(String::from_utf8_lossy(&a.stdout).to_string(), &repo).await // troubleshooting
+            let output = String::from_utf8_lossy(&a.stdout);
+            println!("{}", &output);
+            repo.send_webhook(output.to_string(), &repo).await // troubleshooting
         }
     }
 }
