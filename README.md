@@ -66,7 +66,10 @@ Create a file named `workflow.toml` at the root of the repo you wish to poll for
 phantom_ci
 
 ## add repo to config file
-phantom_ci add https://github.com/your/repo.git
+## https
+phantom_ci add https://github.com/your/repo
+## ssh (recommended)
+phantom_ci add git@github.com:your/repo
 
 ## install systemd service file
 phantom_ci configure service
