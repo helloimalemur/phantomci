@@ -29,8 +29,8 @@ pub struct Repos {
     pub target_branch: Option<String>,
 }
 
-impl Repo {
-    pub fn default() -> Repo {
+impl Default for Repo {
+    fn default() -> Repo {
         Repo {
             name: "".to_string(),
             path: "".to_string(),
@@ -41,6 +41,9 @@ impl Repo {
             triggered: false,
         }
     }
+}
+
+impl Repo {
 
     pub fn new(
         name: String,
@@ -110,7 +113,7 @@ pub fn get_repo_from_config(config_dir: &String) -> Vec<Repo> {
     let repo_config = format!("{}Repo.toml", &config_dir);
     let mut repos = vec![];
     if let Ok(config_file) = Config::builder()
-        .add_source(config::File::with_name(&repo_config.as_str()))
+        .add_source(config::File::with_name(repo_config.as_str()))
         .build()
     {
         if let Ok(map) = config_file.try_deserialize::<HashMap<String, Repos>>() {
@@ -161,7 +164,6 @@ pub fn repo_work_dir(repo: &Repos) -> String {
                 .split('/')
                 .last()
                 .unwrap_or(rand.to_string().as_str())
-                .to_string()
         )
     } else {
         format!(
@@ -171,7 +173,6 @@ pub fn repo_work_dir(repo: &Repos) -> String {
                 .split('/')
                 .last()
                 .unwrap_or(rand.to_string().as_str())
-                .to_string()
         )
     }
 }
@@ -197,7 +198,7 @@ fn clone_repo(repo: &Repo) {
         .arg("-C")
         .arg(p)
         .arg("clone")
-        .arg(repo.path.to_string())
+        .arg(&repo.path)
         .output()
     {
         let git_repo_path = format!("{}/.git", repo.work_dir);
@@ -215,10 +216,10 @@ fn get_default_branch(repo: &mut Repo) -> String {
 
     if let Ok(output) = Command::new("git")
         .arg("-C")
-        .arg(repo.work_dir.to_owned())
+        .arg(&repo.work_dir)
         .arg("remote")
         .arg("show")
-        .arg(repo.path.to_string())
+        .arg(&repo.path)
         .output()
     {
         let lines = output.stdout.lines();

@@ -41,7 +41,7 @@ async fn run_command(repo: Repo, command: WorkflowCommand) {
     );
     if let Ok(o) = process::Command::new(root[0])
         .args(args)
-        .current_dir(repo.work_dir.to_string())
+        .current_dir(&repo.work_dir)
         .spawn()
     {
         if let Ok(a) = o.wait_with_output() {
