@@ -44,7 +44,6 @@ impl Default for Repo {
 }
 
 impl Repo {
-
     pub fn new(
         name: String,
         path: String,
