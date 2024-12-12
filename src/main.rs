@@ -11,7 +11,6 @@ use crate::options::process_arguments;
 use crate::repo::{get_repo_from_config, prepare};
 use crate::scm::poll_repos;
 use crate::util::default_config_path;
-use clap::Parser;
 use std::path::Path;
 use std::time::Duration;
 

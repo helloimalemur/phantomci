@@ -1,7 +1,7 @@
 use crate::repo::Repo;
 use config::Config;
 use std::collections::{BTreeMap, HashMap};
-use std::{fs, process};
+use std::process;
 use whoami::hostname;
 
 // Parse the workflow file

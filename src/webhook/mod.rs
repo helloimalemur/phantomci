@@ -29,16 +29,16 @@ impl WebhookConfig {
 
 pub struct Webhook {
     pub webhook_config: WebhookConfig,
-    fired: bool,
-    successful: bool,
+    // fired: bool,
+    // successful: bool,
 }
 
 impl Webhook {
     pub fn new(config: WebhookConfig) -> Webhook {
         Webhook {
             webhook_config: config,
-            fired: false,
-            successful: false,
+            // fired: false,
+            // successful: false,
         }
     }
     pub async fn send(&self) {
