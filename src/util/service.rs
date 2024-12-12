@@ -1,4 +1,3 @@
-use std::io::Write;
 use std::{fs, process};
 
 fn default_systemd_service_dir(f: String) -> String {

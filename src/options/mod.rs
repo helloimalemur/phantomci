@@ -18,7 +18,7 @@ pub enum Command {
     Configure { sub: String },
 }
 
-pub fn process_arguments(app_state: &mut AppState, config_dir: &String) {
+pub fn process_arguments(_app_state: &mut AppState, config_dir: &String) {
     let repo_config = format!("{}Repo.toml", &config_dir);
     if !Path::new(&repo_config.as_str()).exists() {
         create_default_config(&repo_config);

@@ -218,11 +218,10 @@ fn get_default_branch(repo: &mut Repo) -> String {
         .output()
     {
         let lines = output.stdout.lines();
-        #[warn(unused_mut)]
         if let Some(s) = lines
             .map(|l| l.unwrap())
             .filter(|l| l.contains("HEAD branch:"))
-            .map(|mut l| l.replace("HEAD branch:", ""))
+            .map(|l| l.replace("HEAD branch:", ""))
             .next()
         {
             head_branch = s.trim().to_string();

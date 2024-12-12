@@ -13,7 +13,6 @@ use crate::scm::poll_repos;
 use crate::util::default_config_path;
 use clap::Parser;
 use std::path::Path;
-use std::process::exit;
 use std::time::Duration;
 
 #[tokio::main]

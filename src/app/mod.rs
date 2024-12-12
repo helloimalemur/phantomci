@@ -34,9 +34,7 @@ impl AppState {
         save_state(self.get_serializable());
     }
     pub fn restore_state(&mut self) {
-        #[warn(unused_assignments)]
-        let mut state_path = String::new();
-        state_path = get_state_path();
+        let mut state_path: String = get_state_path();
         if state_path.is_empty() {
             state_path = get_previous_state_path();
         }

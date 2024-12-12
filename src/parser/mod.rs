@@ -60,7 +60,7 @@ struct WorkflowCommand {
 }
 
 fn get_command_from_config(path: String) -> HashMap<String, WorkflowCommand> {
-    let mut workflow_commands = HashMap::<String, WorkflowCommand>::new();
+    let workflow_commands = HashMap::<String, WorkflowCommand>::new();
     if let Ok(config_file) = Config::builder()
         .add_source(config::File::with_name(&path))
         .build()
