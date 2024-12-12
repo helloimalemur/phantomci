@@ -13,7 +13,7 @@ pub async fn parse_workflow(file_path: &str, repo: Repo) {
         );
         println!("{}", starting_message);
         repo.send_webhook(starting_message, &repo).await;
-        // println!("Parsed workflow file: \n{}", content);
+
         let commands = get_command_from_config((&file_path).to_string());
         let mut map = BTreeMap::<usize, WorkflowCommand>::new();
         for i in commands {
@@ -23,9 +23,7 @@ pub async fn parse_workflow(file_path: &str, repo: Repo) {
         for e in map.iter() {
             run_command(repo.to_owned(), e.1.to_owned()).await
         }
-        // .for_each( |e| {
-        //     run_command(repo.to_owned(), e.1.to_owned())
-        // });
+
         println!("========================================================");
         println!("========================================================");
     } else {
