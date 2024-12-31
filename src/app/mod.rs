@@ -1,11 +1,12 @@
 mod state;
 
 use crate::app::state::{get_previous_state_path, get_state_path, save_state};
-use crate::repo::Repo;
+use crate::repo::{get_repo_from_config, Repo};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+use crate::util::default_config_path;
 
 // Struct to hold application state
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -65,7 +66,17 @@ impl AppState {
     }
 
     // Add a new repository
-    pub fn add_repo(&self, name: String, repo: Repo) {
-        self.repos.lock().unwrap().insert(name, repo);
+    pub fn add_repos_from_config(&mut self) {
+        let config_dir = default_config_path();
+        get_repo_from_config(&config_dir)
+            .iter_mut()
+            .for_each(|repo| {
+                repo.prepare();
+                self.add_repo(repo.clone().name, repo.to_owned())
+            });
+    }
+
+    pub fn add_repo(&mut self, repo_name: String, repo: Repo) {
+        self.repos.lock().unwrap().insert(repo_name, repo);
     }
 }

@@ -1,6 +1,6 @@
 use crate::app::AppState;
 use crate::repo::{create_default_config, write_repo_to_config, Repo};
-use crate::util::default_repo_work_path;
+use crate::util::{default_config_path, default_repo_work_path, default_repo_work_path_remove_data};
 use crate::util::service::configure_systemd;
 use clap::{Parser, Subcommand};
 use std::path::Path;
@@ -16,6 +16,7 @@ pub struct Arguments {
 pub enum Command {
     Add { path: Option<String> },
     Configure { sub: String },
+    Reload,
 }
 
 pub fn process_arguments(_app_state: &mut AppState, config_dir: &String) {
@@ -52,5 +53,8 @@ pub fn process_arguments(_app_state: &mut AppState, config_dir: &String) {
                 exit(1);
             }
         },
+        Some(Command::Reload) => {
+            default_repo_work_path_remove_data();
+        }
     }
 }

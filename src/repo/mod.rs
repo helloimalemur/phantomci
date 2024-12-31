@@ -62,6 +62,18 @@ impl Repo {
         }
     }
 
+    pub fn prepare(&mut self) {
+        // clone if not exist
+        env::set_var("GIT_SSH_COMMAND", "ssh -o StrictHostKeyChecking=no");
+        if !Path::new(&self.work_dir).exists() && fs::create_dir_all(Path::new(&self.work_dir)).is_ok()
+        {
+            clone_repo(self);
+            get_default_branch(self);
+        }
+
+        self.last_sha = fetch_latest_sha(&self)
+    }
+
     pub async fn send_webhook(&self, message: String, repo: &Repo) {
         let title = repo.path.split('/').last().unwrap_or(repo.path.as_str());
 
@@ -172,18 +184,6 @@ pub fn repo_work_dir(repo: &Repos) -> String {
                 .unwrap_or(rand.to_string().as_str())
         )
     }
-}
-
-pub fn prepare(repo: &mut Repo) {
-    // clone if not exist
-    env::set_var("GIT_SSH_COMMAND", "ssh -o StrictHostKeyChecking=no");
-    if !Path::new(&repo.work_dir).exists() && fs::create_dir_all(Path::new(&repo.work_dir)).is_ok()
-    {
-        clone_repo(repo);
-        get_default_branch(repo);
-    }
-
-    repo.last_sha = fetch_latest_sha(repo)
 }
 
 fn clone_repo(repo: &Repo) {

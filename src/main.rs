@@ -8,7 +8,6 @@ pub mod webhook;
 
 use crate::app::AppState;
 use crate::options::process_arguments;
-use crate::repo::{get_repo_from_config, prepare};
 use crate::scm::poll_repos;
 use crate::util::default_config_path;
 use std::path::Path;
@@ -25,14 +24,16 @@ async fn main() {
 
     let mut state = AppState::new();
     state.restore_state();
+    state.add_repos_from_config();
     process_arguments(&mut state, &config_dir);
 
-    get_repo_from_config(&config_dir)
-        .iter_mut()
-        .for_each(|repo| {
-            prepare(repo);
-            state.add_repo(repo.clone().name, repo.to_owned())
-        });
+    // let config_dir = default_config_path();
+    // get_repo_from_config(&config_dir)
+    //     .iter_mut()
+    //     .for_each(|repo| {
+    //         prepare(repo);
+    //         state.add_repo(repo.clone().name, repo.to_owned())
+    //     });
 
     println!("Starting Git SCM polling...\n     config: {}", &config_dir);
     poll_repos(state, Duration::from_secs(15)).await;

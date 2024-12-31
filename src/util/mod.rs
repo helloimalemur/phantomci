@@ -3,6 +3,21 @@ use std::path::Path;
 
 pub mod service;
 
+pub fn default_repo_work_path_remove_data() -> String {
+    let mut out = String::new();
+    if let Ok(cur_user) = whoami::username() {
+        if cur_user.contains("root") {
+            out = "/root/.cache/phantomCI/".to_string();
+        } else {
+            out = format!("/home/{}/.cache/phantomCI/", cur_user);
+        }
+        let _ = fs::remove_dir_all(Path::new(&out));
+    }
+    out
+}
+
+
+
 pub fn default_repo_work_path(repo_name: String) -> String {
     let mut out = String::new();
     if let Ok(cur_user) = whoami::username() {
