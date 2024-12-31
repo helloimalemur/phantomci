@@ -122,7 +122,7 @@ async fn check_repo_triggered(repo: &mut Repo) {
 }
 
 // Main polling logic
-pub async fn poll_repos(state: AppState, interval_duration: Duration) {
+pub async fn poll_repos(mut state: AppState, interval_duration: Duration) {
     let mut ticker = interval(interval_duration);
 
     loop {
@@ -133,6 +133,7 @@ pub async fn poll_repos(state: AppState, interval_duration: Duration) {
             check_repo_triggered(repo).await
         }
         state.repos.lock().unwrap().clone_from(&repos);
+        state.add_repos_from_config();
         state.save_state();
     }
 }

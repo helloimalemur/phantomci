@@ -77,6 +77,10 @@ impl AppState {
     }
 
     pub fn add_repo(&mut self, repo_name: String, repo: Repo) {
-        self.repos.lock().unwrap().insert(repo_name, repo);
+        if let Ok(mut s) = self.repos.lock() {
+            if !s.contains_key(&repo_name) {
+                s.insert(repo_name, repo);
+            }
+        }
     }
 }
