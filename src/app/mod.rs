@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
-use crate::util::default_config_path;
+use crate::util::{default_config_path, default_repo_work_path_delete, default_repo_work_path_remove_data};
 
 // Struct to hold application state
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -68,12 +68,18 @@ impl AppState {
     // Add a new repository
     pub fn add_repos_from_config(&mut self) {
         let config_dir = default_config_path();
+        let mut left_out = self.get_serializable().repos.clone();
         get_repo_from_config(&config_dir)
             .iter_mut()
             .for_each(|repo| {
+                left_out.remove(&repo.name);
                 repo.prepare();
                 self.add_repo(repo.clone().name, repo.to_owned())
             });
+        left_out.iter().for_each(|repo| {
+            println!("Removed from config: {}", repo.1.name);
+            default_repo_work_path_delete(repo.1.name.clone());
+        });
     }
 
     pub fn add_repo(&mut self, repo_name: String, repo: Repo) {
