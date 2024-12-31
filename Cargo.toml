@@ -1,6 +1,6 @@
 [package]
 name = "phantom_ci"
-version = "0.1.163"
+version = "0.1.164"
 edition = "2021"
 description = "Secure Headless Self-Hosted Runner"
 keywords = ["self-hosted", "git", "scm", "cicd"]
@@ -10,7 +10,7 @@ license = "MIT"
 [dependencies]
 chrono = "0.4.38"
 clap = { version = "4.5.21", features = ["derive"] }
-config = "0.14.1"
+config = "0.15.4"
 discord-webhook-lib = "0.1.7"
 dotenv = "0.15.0"
 rand = "0.9.0-beta.0"
