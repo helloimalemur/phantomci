@@ -1,7 +1,7 @@
 FROM rust:bookworm
 ENV GIT_SSH_COMMAND="ssh -i /root/.ssh/id_rsa -o StrictHostKeyChecking=no"
 RUN ssh-keygen -t rsa -b 4096 -f /root/.ssh/id_rsa -P ""
-WORKDIR /phantomCI
+WORKDIR /phantom_ci
 COPY . .
 
 COPY docker/key /root/keys/id_rsa

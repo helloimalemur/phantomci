@@ -167,7 +167,7 @@ pub fn repo_work_dir(repo: &Repos) -> String {
     let cur_user = whoami::username().unwrap();
     if cur_user.contains("root") {
         format!(
-            "/root/.cache/phantomCI/{}",
+            "/root/.cache/phantom_ci/{}",
             repo.path
                 .split('/')
                 .last()
@@ -175,7 +175,7 @@ pub fn repo_work_dir(repo: &Repos) -> String {
         )
     } else {
         format!(
-            "/home/{}/.cache/phantomCI/{}",
+            "/home/{}/.cache/phantom_ci/{}",
             cur_user,
             repo.path
                 .split('/')

@@ -1,4 +1,4 @@
-## phantomCI
+## phantom_ci
 ### Secure Headless Self-Hosted Runner
 #### Makes zero unnecessary outbound connections, thereby increasing security.
 #### Output is sent to stdout only, by default, with the option to enable webhook notifications.
@@ -36,7 +36,7 @@ run = "make deploy"
 ```
 
 ### a repo will only begin to be monitored after adding it to phantom_ci's configuration file.
-## ~/.config/phantomCI/Repo.toml 
+## ~/.config/phantom_ci/Repo.toml 
 ```toml
 [sys-compare]
 path = "https://github.com/helloimalemur/sys-compare"
@@ -52,7 +52,7 @@ target_branch = "test-branch" ## ensure branch exists [issue #3]
 
 ```
 #### Configuring webhooks
-## ~/.config/phantomCI/.env 
+## ~/.config/phantom_ci/.env 
 ```dotenv
 DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/...."
 ```

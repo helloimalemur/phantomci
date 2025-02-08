@@ -1,7 +1,7 @@
 version: "3"
 services:
   phantom_ci:
-#    image: phantomCI
+#    image: phantom_ci
     container_name: phantom_ci
     build:
       context: ../
