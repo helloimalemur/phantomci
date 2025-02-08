@@ -1,10 +1,18 @@
 use std::fs;
 use std::path::Path;
+use std::process::exit;
+use tokio::process;
 
 pub mod service;
 
-pub fn default_repo_work_path_remove_data() -> String {
+pub fn default_repo_work_path_remove_cache_data() {
+    println!("Stopping phantomci service...");
+    let _ = process::Command::new("systemctl")
+        .arg("stop")
+        .arg("phantomci")
+        .spawn();
     let mut out = String::new();
+    println!("Removing phantomci caches...");
     if let Ok(cur_user) = whoami::username() {
         if cur_user.contains("root") {
             out = "/root/.cache/phantomCI/".to_string();
@@ -13,7 +21,12 @@ pub fn default_repo_work_path_remove_data() -> String {
         }
         let _ = fs::remove_dir_all(Path::new(&out));
     }
-    out
+    println!("Starting phantomci service...");
+    let _ = process::Command::new("systemctl")
+        .arg("start")
+        .arg("phantomci")
+        .spawn();
+    exit(0);
 }
 
 

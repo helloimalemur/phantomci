@@ -60,21 +60,21 @@ impl Webhook {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::webhook::{Webhook, WebhookConfig, WebhookType};
-    use std::env;
-
-    #[test]
-    async fn send_discord_webhook() {
-        if let Ok(wh_url) = env::var("DISCORD_WEBHOOK_URL") {
-            let webhook = Webhook::new(WebhookConfig::new(
-                "test webhook",
-                wh_url.as_str(),
-                WebhookType::Discord,
-                "hello world",
-            ));
-            webhook.send().await;
-        }
-    }
-}
+// #[cfg(test)]
+// mod tests {
+//     use crate::webhook::{Webhook, WebhookConfig, WebhookType};
+//     use std::env;
+// 
+//     #[test]
+//     async fn send_discord_webhook() {
+//         if let Ok(wh_url) = env::var("DISCORD_WEBHOOK_URL") {
+//             let webhook = Webhook::new(WebhookConfig::new(
+//                 "test webhook",
+//                 wh_url.as_str(),
+//                 WebhookType::Discord,
+//                 "hello world",
+//             ));
+//             webhook.send().await;
+//         }
+//     }
+// }

@@ -103,9 +103,9 @@ pub fn write_repo_to_config(repo: Repo) {
     let config_entry = format!(
         "[{}]\n\
     path = \"{}\"\n\
-    target_branch = \"master\"\n\n\
+    target_branch = \"{}\"\n\n\
     ",
-        name, repo.path
+        name, repo.path, repo.target_branch
     );
 
     let repo_config = format!("{}Repo.toml", default_config_path());
@@ -138,16 +138,15 @@ pub fn get_repo_from_config(config_dir: &String) -> Vec<Repo> {
                     triggered: false,
                 })
             });
-            if repos.is_empty() {
-                println!("Config empty !!\nUpdate: {}", repo_config);
-                exit(1);
-            }
             repos
         } else {
-            panic!("Config not found !!")
+            vec![]
         }
     } else {
-        panic!("Config not found !!")
+        let repo_config = format!("{}Repo.toml", &config_dir);
+        create_default_config(&repo_config);
+        println!("Config not found !! default config created, please edit;\n{}", repo_config);
+        exit(1);
     }
 }
 

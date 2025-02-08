@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
-use crate::util::{default_config_path, default_repo_work_path_delete, default_repo_work_path_remove_data};
+use crate::util::{default_config_path, default_repo_work_path_delete, default_repo_work_path_remove_cache_data};
 
 // Struct to hold application state
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
