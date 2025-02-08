@@ -1,5 +1,5 @@
 use crate::app::AppState;
-use crate::repo::{create_default_config, write_repo_to_config, Repo};
+use crate::repo::{create_default_config, get_repo_from_config, write_repo_to_config, Repo};
 use crate::util::{default_config_path, default_repo_work_path, default_repo_work_path_remove_cache_data};
 use crate::util::service::configure_systemd;
 use clap::{Parser, Subcommand};
@@ -16,6 +16,7 @@ pub struct Arguments {
 pub enum Command {
     Add { path: Option<String>, branch: Option<String> },
     Configure { sub: String },
+    List,
     Reload,
 }
 
@@ -73,6 +74,15 @@ pub fn process_arguments(_app_state: &mut AppState, config_dir: &String) {
         },
         Some(Command::Reload) => {
             default_repo_work_path_remove_cache_data();
+        },
+        Some(Command::List) => {
+            let repo_config = format!("{}Repo.toml", &config_dir);
+            println!("Listing repos: {}", repo_config);
+            let repo = get_repo_from_config(&config_dir);
+            for re in repo.iter() {
+                println!("{}", re.path);
+            }
+            exit(0);
         }
     }
 }
