@@ -80,7 +80,7 @@ pub fn process_arguments(_app_state: &mut AppState, config_dir: &String) {
             println!("Listing repos: {}", repo_config);
             let repo = get_repo_from_config(&config_dir);
             for re in repo.iter() {
-                println!("{}", re.path);
+                println!("{} - {}", re.path, re.target_branch);
             }
             exit(0);
         }

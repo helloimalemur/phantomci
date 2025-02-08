@@ -23,7 +23,7 @@ async fn main() {
     }
 
     let mut state = AppState::new();
-    state.restore_state();
+    // state.restore_state();
     state.add_repos_from_config();
     process_arguments(&mut state, &config_dir);
 
