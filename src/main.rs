@@ -15,18 +15,30 @@ use std::time::Duration;
 
 #[tokio::main]
 async fn main() {
-    let config_dir = default_config_path();
+    if let Some(config_dir) = default_config_path() {
 
-    let env_path = format!("{}.env", config_dir);
-    if dotenv::from_path(Path::new(&env_path)).is_ok() {
-        println!("Loaded variables from .env")
+        if let Err(e) = load_env_variables(&config_dir) {
+            eprintln!("Error loading environment variables: {}", e);
+        }
+
+        let mut state = AppState::new();
+        if let Err(e) = initialize_state(&mut state, &config_dir) {
+            eprintln!("Error initializing state: {}", e);
+        }
+
+        println!("Starting Git SCM polling...\n     config: {}", &config_dir);
+        poll_repos(state, Duration::from_secs(15)).await;
     }
 
-    let mut state = AppState::new();
+}
+
+fn initialize_state(state: &mut AppState, config_dir: &str) -> Result<(), anyhow::Error> {
     // state.restore_state();
     state.add_repos_from_config();
-    process_arguments(&mut state, &config_dir);
+    Ok(process_arguments(state, config_dir))
+}
 
-    println!("Starting Git SCM polling...\n     config: {}", &config_dir);
-    poll_repos(state, Duration::from_secs(15)).await;
+fn load_env_variables(path: &str) -> Result<(), dotenv::Error> {
+    let env_path = format!("{}.env", path);
+    dotenv::from_path(Path::new(&env_path)).map(|_| println!("env: {}", env_path))
 }

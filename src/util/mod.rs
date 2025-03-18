@@ -58,7 +58,7 @@ pub fn default_repo_work_path_delete(repo_name: String) -> String {
     out
 }
 
-pub fn default_config_path() -> String {
+pub fn default_config_path() -> Option<String> {
     let mut out = String::new();
     if let Ok(cur_user) = whoami::username() {
         if cur_user.contains("root") {
@@ -66,7 +66,9 @@ pub fn default_config_path() -> String {
         } else {
             out = format!("/home/{}/.config/phantom_ci/", cur_user);
         }
-        let _ = fs::create_dir_all(Path::new(&out));
+        if let Err(e) = fs::create_dir_all(Path::new(&out)) {
+            eprintln!("{}", e);
+        }
     }
-    out
+    Some(out)
 }

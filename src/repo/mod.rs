@@ -107,18 +107,19 @@ pub fn write_repo_to_config(repo: Repo) {
     ",
         name, repo.path, repo.target_branch
     );
-
-    let repo_config = format!("{}Repo.toml", default_config_path());
-    if Path::new(&repo_config.as_str()).exists() {
-        if let Ok(mut f) = OpenOptions::new().append(true).open(repo_config) {
-            if let Err(e) = f.write_all(config_entry.as_ref()) {
-                println!("{:?}", e);
+    if let Some(config_path) = default_config_path() {
+        let repo_config = format!("{}Repo.toml", config_path);
+        if Path::new(&repo_config.as_str()).exists() {
+            if let Ok(mut f) = OpenOptions::new().append(true).open(repo_config) {
+                if let Err(e) = f.write_all(config_entry.as_ref()) {
+                    println!("{:?}", e);
+                }
             }
         }
     }
 }
 
-pub fn get_repo_from_config(config_dir: &String) -> Vec<Repo> {
+pub fn get_repo_from_config(config_dir: &str) -> Vec<Repo> {
     let repo_config = format!("{}Repo.toml", &config_dir);
     let mut repos = vec![];
     if let Ok(config_file) = Config::builder()

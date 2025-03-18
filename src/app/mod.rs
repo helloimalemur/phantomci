@@ -67,20 +67,21 @@ impl AppState {
 
     // Add a new repository
     pub fn add_repos_from_config(&mut self) {
-        let config_dir = default_config_path();
-        let mut left_out = self.get_serializable().repos.clone();
-        get_repo_from_config(&config_dir)
-            .iter_mut()
-            .for_each(|repo| {
-                left_out.remove(&repo.name);
-                repo.prepare();
-                self.add_repo(repo.clone().name, repo.to_owned())
+        if let Some(config_dir) = default_config_path() {
+            let mut left_out = self.get_serializable().repos.clone();
+            get_repo_from_config(&config_dir)
+                .iter_mut()
+                .for_each(|repo| {
+                    left_out.remove(&repo.name);
+                    repo.prepare();
+                    self.add_repo(repo.clone().name, repo.to_owned())
+                });
+            left_out.iter().for_each(|remove_repo| {
+                println!("Removed from config: {}", remove_repo.1.name);
+                self.repos.lock().unwrap().remove(remove_repo.0.as_str());
+                default_repo_work_path_delete(remove_repo.1.name.clone());
             });
-        left_out.iter().for_each(|remove_repo| {
-            println!("Removed from config: {}", remove_repo.1.name);
-            self.repos.lock().unwrap().remove(remove_repo.0.as_str());
-            default_repo_work_path_delete(remove_repo.1.name.clone());
-        });
+        }
     }
 
     pub fn add_repo(&mut self, repo_name: String, repo: Repo) {

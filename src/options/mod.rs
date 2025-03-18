@@ -20,7 +20,7 @@ pub enum Command {
     Reload,
 }
 
-pub fn process_arguments(_app_state: &mut AppState, config_dir: &String) {
+pub fn process_arguments(_app_state: &mut AppState, config_dir: &str) {
     let repo_config = format!("{}Repo.toml", &config_dir);
     if !Path::new(&repo_config.as_str()).exists() {
         create_default_config(&repo_config);
@@ -76,9 +76,9 @@ pub fn process_arguments(_app_state: &mut AppState, config_dir: &String) {
             default_repo_work_path_remove_cache_data();
         },
         Some(Command::List) => {
-            let repo_config = format!("{}Repo.toml", &config_dir);
+            let repo_config = format!("{}Repo.toml", config_dir);
             println!("Listing repos: {}", repo_config);
-            let repo = get_repo_from_config(&config_dir);
+            let repo = get_repo_from_config(config_dir);
             for re in repo.iter() {
                 println!("{} - {}", re.path, re.target_branch);
             }
