@@ -27,7 +27,8 @@ async fn main() {
         }
 
         println!("Starting Git SCM polling...\n     config: {}", &config_dir);
-        poll_repos(state, Duration::from_secs(15)).await;
+        let interval = state.scm_internal.clone();
+        poll_repos(state, Duration::from_secs(interval)).await;
     }
 
 }

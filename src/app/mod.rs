@@ -17,6 +17,7 @@ pub struct SerializableState {
 #[derive(Debug, Clone)]
 pub struct AppState {
     pub repos: Arc<Mutex<HashMap<String, Repo>>>,
+    pub scm_internal: u64
 }
 
 impl Default for AppState {
@@ -29,6 +30,7 @@ impl AppState {
     pub fn new() -> Self {
         Self {
             repos: Arc::new(Mutex::new(HashMap::new())),
+            scm_internal: 15,
         }
     }
     pub fn save_state(&self) {
