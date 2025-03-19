@@ -10,14 +10,16 @@ use tokio::time::interval;
 
 // Fetch the latest commit hash for a given repository
 pub fn fetch_latest_sha(repo: &Repo) -> Option<String> {
-    fetch_pull(repo);
+    if let Err(e) = fetch_pull(repo) {
+        eprintln!("Error: {}", e)
+    }
     let output = Command::new("git")
         .arg("-C")
         .arg(&repo.work_dir)
         .arg("rev-parse")
         .arg("HEAD")
         .output();
-    // println!("{:?}", output);
+
     match output {
         Ok(output) if output.status.success() => {
             Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
@@ -26,59 +28,47 @@ pub fn fetch_latest_sha(repo: &Repo) -> Option<String> {
     }
 }
 
-pub fn fetch_pull(repo: &Repo) {
-    if let Err(output) = Command::new("git")
+pub fn fetch_pull(repo: &Repo) -> Result<(), anyhow::Error> {
+    Command::new("git")
         .arg("-C")
         .arg(&repo.work_dir)
         .arg("stash")
-        .output()
-    {
-        eprintln!("ERROR: {}", &output.to_string())
-    }
+        .output()?;
 
-    if let Err(output) = Command::new("git")
+    Command::new("git")
         .arg("-C")
         .arg(&repo.work_dir)
         .arg("checkout")
         .arg(&repo.target_branch)
-        .output()
-    {
-        eprintln!("ERROR: {}", &output.to_string())
-    }
+        .output()?;
 
-    if let Err(output) = Command::new("git")
+    Command::new("git")
         .arg("-C")
         .arg(&repo.work_dir)
         .arg("reset")
         .arg("--hard")
         .arg("HEAD")
-        .output()
-    {
-        eprintln!("ERROR: {}", &output.to_string())
-    }
+        .output()?;
 
-    if let Err(output) = Command::new("git")
+    Command::new("git")
         .arg("-C")
         .arg(&repo.work_dir)
         .arg("fetch")
-        .output()
-    {
-        eprintln!("ERROR: {}", &output.to_string())
-    }
+        .output()?;
 
-    if let Err(output) = Command::new("git")
+    Command::new("git")
         .arg("-C")
         .arg(&repo.work_dir)
         .arg("pull")
-        .output()
-    {
-        eprintln!("ERROR: {}", &output.to_string())
-    }
+        .output()?;
+    Ok(())
 }
 
-// Check for changes in a repository and handle them
+// Check for changes in a repository and update repo
 fn check_repo_changes(repo: &mut Repo) {
-    if let Some(latest_sha) = fetch_latest_sha(repo) {
+    if let Some(latest_sha) = fetch_latest_sha(repo) { 
+        // check sqlite
+        // last sha
         if repo.last_sha.as_ref() != Some(&latest_sha) {
             println!("========================================================");
             println!("{}", Local::now().format("%Y-%m-%d %H:%M:%S"));
@@ -88,6 +78,7 @@ fn check_repo_changes(repo: &mut Repo) {
             );
 
             repo.last_sha = Some(latest_sha.to_owned());
+            // write sha
 
             repo.triggered = true;
 

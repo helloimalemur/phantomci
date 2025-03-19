@@ -1,7 +1,7 @@
 use crate::app::AppState;
 use crate::repo::{create_default_config, get_repo_from_config, write_repo_to_config, Repo};
-use crate::util::{default_config_path, default_repo_work_path, default_repo_work_path_remove_cache_data};
 use crate::util::service::configure_systemd;
+use crate::util::{default_repo_work_path, default_repo_work_path_remove_cache_data};
 use clap::{Parser, Subcommand};
 use std::path::Path;
 use std::process::exit;
@@ -51,11 +51,11 @@ pub fn process_arguments(_app_state: &mut AppState, config_dir: &str) {
         }
         
         Some(Command::Add { path: Some(path), branch: None }) => {
-            println!("Missing branch name");
+            println!("Missing branch name: {}", &path);
             exit(1);
         }
         Some(Command::Add { path: None, branch: Some(branch) }) => {
-            println!("Missing repo path");
+            println!("Missing repo path: {}", &branch);
             exit(1);
         }
         Some(Command::Add { path: None, branch: None }) => {

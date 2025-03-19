@@ -2,11 +2,11 @@ mod state;
 
 use crate::app::state::{get_previous_state_path, get_state_path, save_state};
 use crate::repo::{get_repo_from_config, Repo};
+use crate::util::{default_config_path, default_repo_work_path_delete};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
-use crate::util::{default_config_path, default_repo_work_path_delete, default_repo_work_path_remove_cache_data};
 
 // Struct to hold application state
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
