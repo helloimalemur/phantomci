@@ -7,7 +7,7 @@ pub fn setup_schema(db: Connection) -> Result<(), anyhow::Error> {
             name  TEXT NOT NULL,
             data  BLOB
         )",
-        (), // empty list of parameters.
+        (),
     ) {
         eprintln!("Error: {}", e);
     } else {
