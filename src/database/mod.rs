@@ -13,5 +13,6 @@ pub fn setup_schema(db: Connection) -> Result<(), anyhow::Error> {
     } else {
         println!("Table Created: person");
     }
+    
     Ok(())
 }
