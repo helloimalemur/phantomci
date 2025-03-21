@@ -11,26 +11,34 @@ use crate::options::process_arguments;
 use crate::scm::poll_repos;
 use crate::util::default_config_path;
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use rusqlite::{params, Connection, Result};
+
 
 #[tokio::main]
 async fn main() {
     if let Some(config_dir) = default_config_path() {
+        let sqlite_path = format!("{}/{}", config_dir, "db.sqlite");
+        if let Ok(sqlite_db) = Connection::open(sqlite_path) {
+            let sqlite_db_mtx = Arc::new(Mutex::new(sqlite_db));
+            
+            if let Err(e) = load_env_variables(&config_dir) {
+                eprintln!("Error loading environment variables: {}", e);
+            }
 
-        if let Err(e) = load_env_variables(&config_dir) {
-            eprintln!("Error loading environment variables: {}", e);
+            let mut state = AppState::new();
+            state.set_db_conn(Arc::clone(&sqlite_db_mtx));
+            
+            if let Err(e) = initialize_state(&mut state, &config_dir) {
+                eprintln!("Error initializing state: {}", e);
+            }
+
+            println!("Starting Git SCM polling...\n     config: {}", &config_dir);
+            let interval = state.scm_internal.clone();
+            poll_repos(state, Duration::from_secs(interval)).await;
         }
-
-        let mut state = AppState::new();
-        if let Err(e) = initialize_state(&mut state, &config_dir) {
-            eprintln!("Error initializing state: {}", e);
-        }
-
-        println!("Starting Git SCM polling...\n     config: {}", &config_dir);
-        let interval = state.scm_internal.clone();
-        poll_repos(state, Duration::from_secs(interval)).await;
     }
-
 }
 
 fn initialize_state(state: &mut AppState, config_dir: &str) -> Result<(), anyhow::Error> {

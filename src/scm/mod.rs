@@ -24,7 +24,10 @@ pub fn fetch_latest_sha(repo: &Repo) -> Option<String> {
         Ok(output) if output.status.success() => {
             Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
         }
-        _ => None,
+        _ => {
+            eprintln!("Error: scm polling error: {}", repo.name);
+            None
+        },
     }
 }
 

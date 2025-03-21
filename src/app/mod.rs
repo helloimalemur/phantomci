@@ -7,6 +7,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+use rusqlite::Connection;
 
 // Struct to hold application state
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -17,7 +18,8 @@ pub struct SerializableState {
 #[derive(Debug, Clone)]
 pub struct AppState {
     pub repos: Arc<Mutex<HashMap<String, Repo>>>,
-    pub scm_internal: u64
+    pub scm_internal: u64,
+    pub db_conn: Option<Arc<Mutex<Connection>>>,
 }
 
 impl Default for AppState {
@@ -31,6 +33,7 @@ impl AppState {
         Self {
             repos: Arc::new(Mutex::new(HashMap::new())),
             scm_internal: 15,
+            db_conn: None,
         }
     }
     pub fn save_state(&self) {
@@ -92,5 +95,9 @@ impl AppState {
                 s.insert(repo_name, repo);
             }
         }
+    }
+    
+    pub fn set_db_conn(&mut self, db_conn: Arc<Mutex<Connection>>) {
+        self.db_conn  = Some(db_conn);
     }
 }
