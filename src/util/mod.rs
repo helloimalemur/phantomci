@@ -1,8 +1,7 @@
-use std::{fs, thread};
 use std::env::consts::OS;
-use std::fmt::format;
 use std::path::Path;
 use std::process::exit;
+use std::{fs, thread};
 use tokio::process;
 
 pub mod service;

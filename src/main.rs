@@ -10,10 +10,10 @@ use crate::app::AppState;
 use crate::options::process_arguments;
 use crate::scm::poll_repos;
 use crate::util::default_config_path;
+use rusqlite::{Connection, Result};
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 use std::time::Duration;
-use rusqlite::{params, Connection, Result};
 
 
 #[tokio::main]
