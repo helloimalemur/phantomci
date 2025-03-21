@@ -64,7 +64,7 @@ impl Webhook {
 // mod tests {
 //     use crate::webhook::{Webhook, WebhookConfig, WebhookType};
 //     use std::env;
-// 
+//
 //     #[test]
 //     async fn send_discord_webhook() {
 //         if let Ok(wh_url) = env::var("DISCORD_WEBHOOK_URL") {

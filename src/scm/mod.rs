@@ -27,7 +27,7 @@ pub fn fetch_latest_sha(repo: &Repo) -> Option<String> {
         _ => {
             eprintln!("Error: scm polling error: {}", repo.name);
             None
-        },
+        }
     }
 }
 
@@ -69,7 +69,7 @@ pub fn fetch_pull(repo: &Repo) -> Result<(), anyhow::Error> {
 
 // Check for changes in a repository and update repo
 fn check_repo_changes(repo: &mut Repo) {
-    if let Some(latest_sha) = fetch_latest_sha(repo) { 
+    if let Some(latest_sha) = fetch_latest_sha(repo) {
         // check sqlite
         // last sha
         if repo.last_sha.as_ref() != Some(&latest_sha) {

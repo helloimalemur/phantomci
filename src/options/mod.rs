@@ -14,8 +14,13 @@ pub struct Arguments {
 
 #[derive(Debug, Clone, Subcommand)]
 pub enum Command {
-    Add { path: Option<String>, branch: Option<String> },
-    Configure { sub: String },
+    Add {
+        path: Option<String>,
+        branch: Option<String>,
+    },
+    Configure {
+        sub: String,
+    },
     List,
     Reload,
 }
@@ -29,13 +34,21 @@ pub fn process_arguments(_app_state: &mut AppState, config_dir: &str) {
 
     match arguments.command {
         None => {}
-        Some(Command::Add { path: Some(repo_path), branch: Some(branch) }) => {
+        Some(Command::Add {
+            path: Some(repo_path),
+            branch: Some(branch),
+        }) => {
             if branch.len() == 0 {
                 println!("Branch name is empty");
                 exit(1);
             }
             if !repo_path.is_empty() {
-                let repo_name_only = repo_path.split('/').last().to_owned().unwrap_or("0").to_string();
+                let repo_name_only = repo_path
+                    .split('/')
+                    .last()
+                    .to_owned()
+                    .unwrap_or("0")
+                    .to_string();
                 println!("Adding repo: {}", &repo_name_only);
                 write_repo_to_config(Repo::new(
                     repo_name_only.clone(),
@@ -49,16 +62,25 @@ pub fn process_arguments(_app_state: &mut AppState, config_dir: &str) {
                 exit(0);
             }
         }
-        
-        Some(Command::Add { path: Some(path), branch: None }) => {
+
+        Some(Command::Add {
+            path: Some(path),
+            branch: None,
+        }) => {
             println!("Missing branch name: {}", &path);
             exit(1);
         }
-        Some(Command::Add { path: None, branch: Some(branch) }) => {
+        Some(Command::Add {
+            path: None,
+            branch: Some(branch),
+        }) => {
             println!("Missing repo path: {}", &branch);
             exit(1);
         }
-        Some(Command::Add { path: None, branch: None }) => {
+        Some(Command::Add {
+            path: None,
+            branch: None,
+        }) => {
             println!("Missing repo path");
             exit(1);
         }
@@ -74,7 +96,7 @@ pub fn process_arguments(_app_state: &mut AppState, config_dir: &str) {
         },
         Some(Command::Reload) => {
             default_repo_work_path_remove_cache_data();
-        },
+        }
         Some(Command::List) => {
             let repo_config = format!("{}Repo.toml", config_dir);
             println!("Listing repos: {}", repo_config);

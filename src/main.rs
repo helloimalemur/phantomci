@@ -1,4 +1,5 @@
 pub mod app;
+mod database;
 pub mod options;
 pub mod parser;
 pub mod repo;
@@ -7,34 +8,31 @@ pub mod util;
 pub mod webhook;
 
 use crate::app::AppState;
+use crate::database::setup_schema;
 use crate::options::process_arguments;
 use crate::scm::poll_repos;
 use crate::util::default_config_path;
 use rusqlite::{Connection, Result};
 use std::path::Path;
-use std::sync::Mutex;
 use std::time::Duration;
-
 
 #[tokio::main]
 async fn main() {
-    static mut DB: Option<Mutex<Connection>> = None;
-
     if let Some(config_dir) = default_config_path() {
         let sqlite_path = format!("{}/{}", config_dir, "db.sqlite");
-        
         if let Ok(conn) = Connection::open(&sqlite_path) {
-            unsafe { DB = Some(Mutex::new(conn)); }
+            if let Err(e) = setup_schema(conn) {
+                eprintln!("Failed to setup schema: {:?}", e);
+            }
         }
 
-            
         if let Err(e) = load_env_variables(&config_dir) {
             eprintln!("Error loading environment variables: {}", e);
         }
 
         let mut state = AppState::new();
         // state.set_db_conn(Arc::clone(&sqlite_db_mtx));
-        
+
         if let Err(e) = initialize_state(&mut state, &config_dir) {
             eprintln!("Error initializing state: {}", e);
         }
@@ -42,7 +40,6 @@ async fn main() {
         println!("Starting Git SCM polling...\n     config: {}", &config_dir);
         let interval = state.scm_internal.clone();
         poll_repos(state, Duration::from_secs(interval)).await;
-
     }
 }
 

@@ -65,7 +65,8 @@ impl Repo {
     pub fn prepare(&mut self) {
         // clone if not exist
         env::set_var("GIT_SSH_COMMAND", "ssh -o StrictHostKeyChecking=no");
-        if !Path::new(&self.work_dir).exists() && fs::create_dir_all(Path::new(&self.work_dir)).is_ok()
+        if !Path::new(&self.work_dir).exists()
+            && fs::create_dir_all(Path::new(&self.work_dir)).is_ok()
         {
             clone_repo(self);
             get_default_branch(self);
@@ -146,7 +147,10 @@ pub fn get_repo_from_config(config_dir: &str) -> Vec<Repo> {
     } else {
         let repo_config = format!("{}Repo.toml", &config_dir);
         create_default_config(&repo_config);
-        println!("Config not found !! default config created, please edit;\n{}", repo_config);
+        println!(
+            "Config not found !! default config created, please edit;\n{}",
+            repo_config
+        );
         exit(1);
     }
 }

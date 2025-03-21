@@ -15,28 +15,25 @@ pub fn default_repo_work_path_remove_cache_data() {
     thread::sleep(std::time::Duration::from_secs(3));
     println!("Removing phantom_ci caches...");
     let out: String = match OS {
-        "linux" => {
-            match whoami::username().is_ok_and(|a| a.eq("root")) {
-                true => {
-                    "/root/.cache/phantom_ci/".to_string()
-                }
-                false => {
-                    if let Ok(user) = whoami::username() {
-                        user
-                    } else {
-                        panic!("unable to determine user name");
-                    }
+        "linux" => match whoami::username().is_ok_and(|a| a.eq("root")) {
+            true => "/root/.cache/phantom_ci/".to_string(),
+            false => {
+                if let Ok(user) = whoami::username() {
+                    user
+                } else {
+                    panic!("unable to determine user name");
                 }
             }
-        }
+        },
         "macos" => {
             match whoami::username().is_ok_and(|a| a.eq("root")) {
-                true => {
-                    "/var/root/.cache/phantom_ci/".to_string()
-                }
+                true => "/var/root/.cache/phantom_ci/".to_string(),
                 false => {
                     if let Ok(user) = whoami::username() {
-                        format!("/Users/{}/Library/Caches/com.helloimalemur.phantom_ci/", user)
+                        format!(
+                            "/Users/{}/Library/Caches/com.helloimalemur.phantom_ci/",
+                            user
+                        )
                         // format!("/Users/{}/Library/Application Support/com.helloimalemur.phantom_ci/", user)
                     } else {
                         panic!("unable to determine user name");
@@ -49,7 +46,7 @@ pub fn default_repo_work_path_remove_cache_data() {
             panic!("invalid platform")
         }
     };
-    
+
     let _ = fs::remove_dir_all(Path::new(&out));
     println!("Starting phantom_ci service...");
     let _ = process::Command::new("systemctl")
@@ -58,7 +55,6 @@ pub fn default_repo_work_path_remove_cache_data() {
         .spawn();
     exit(0);
 }
-
 
 pub fn default_repo_work_path(repo_name: String) -> String {
     let mut out = String::new();
