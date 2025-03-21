@@ -31,7 +31,6 @@ async fn main() {
         }
 
         let mut state = AppState::new();
-        // state.set_db_conn(Arc::clone(&sqlite_db_mtx));
 
         if let Err(e) = initialize_state(&mut state, &config_dir) {
             eprintln!("Error initializing state: {}", e);
