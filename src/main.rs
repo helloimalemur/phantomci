@@ -6,6 +6,7 @@ pub mod repo;
 pub mod scm;
 pub mod util;
 pub mod webhook;
+pub mod logging;
 
 use crate::app::AppState;
 use crate::database::setup_schema;
@@ -18,6 +19,7 @@ use std::time::Duration;
 
 #[tokio::main]
 async fn main() {
+    logging::init();
     if let Some(config_dir) = default_config_path() {
         let sqlite_path = format!("{}/{}", config_dir, "db.sqlite");
         if let Ok(conn) = Connection::open(&sqlite_path) {
