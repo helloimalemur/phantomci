@@ -89,10 +89,6 @@ impl AppState {
                 default_repo_work_path_delete(remove_repo.1.name.clone()).unwrap();
             });
         }
-
-        println!("{:?}", self.repos.lock().unwrap().iter().last());
-        exit(1);
-
     }
 
     pub fn add_repo(&mut self, repo_name: String, repo: Repo) {

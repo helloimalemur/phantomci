@@ -185,7 +185,7 @@ pub fn repo_work_dir(repo: &Repos) -> String {
             }
             "macos" => {
                 format!(
-                    "/var/root/Library/Caches/com.helloimalemur.phantom_ci/{}",
+                    "/var/root/.cache/phantom_ci/{}",
                     repo.path
                         .split('/')
                         .last()
