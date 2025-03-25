@@ -28,7 +28,7 @@ pub fn default_repo_work_path_remove_cache_data() {
         },
         "macos" => {
             match whoami::username().is_ok_and(|a| a.eq("root")) {
-                true => "/var/root/.cache/phantom_ci/".to_string(),
+                true => "/var/root/Library/Caches/com.helloimalemur.phantom_ci/".to_string(),
                 false => {
                     if let Ok(user) = whoami::username() {
                         format!(
@@ -73,7 +73,7 @@ pub fn default_repo_work_path(repo_name: String) -> Option<String> {
             },
             "macos" => {
                 if cur_user.contains("root") {
-                    let path = format!("/var/root/.cache/phantom_ci/{}", repo_name);
+                    let path = format!("/var/root/Library/Caches/com.helloimalemur.phantom_ci/{}", repo_name);
                     let _ = fs::create_dir_all(&path);
                     path
                 } else {
@@ -107,7 +107,7 @@ pub fn default_repo_work_path_delete(repo_name: String) -> Option<String> {
             },
             "macos" => {
                 if cur_user.contains("root") {
-                    let path = format!("/var/root/.cache/phantom_ci/{}", repo_name);
+                    let path = format!("/var/root/Library/Caches/com.helloimalemur.phantom_ci/{}", repo_name);
                     let _ = fs::remove_dir_all(&path);
                     path
                 } else {

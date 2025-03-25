@@ -8,6 +8,7 @@ use std::io::{BufRead, Write};
 use std::path::Path;
 use std::process::{exit, Command};
 use std::{env, fs};
+use std::env::consts::OS;
 
 // Struct to represent a repository
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
@@ -172,22 +173,55 @@ pub fn repo_work_dir(repo: &Repos) -> String {
     let rand = rand::random::<u64>();
     let cur_user = whoami::username().unwrap();
     if cur_user.contains("root") {
-        format!(
-            "/root/.cache/phantom_ci/{}",
-            repo.path
-                .split('/')
-                .last()
-                .unwrap_or(rand.to_string().as_str())
-        )
+        match OS {
+            "linux" => {
+                format!(
+                    "/root/.cache/phantom_ci/{}",
+                    repo.path
+                        .split('/')
+                        .last()
+                        .unwrap_or(rand.to_string().as_str())
+                )
+            }
+            "macos" => {
+                format!(
+                    "/var/root/Library/Caches/com.helloimalemur.phantom_ci/{}",
+                    repo.path
+                        .split('/')
+                        .last()
+                        .unwrap_or(rand.to_string().as_str())
+                )
+            }
+            &_ => {
+                panic!("Unsupported OS!");
+            }
+        }
     } else {
-        format!(
-            "/home/{}/.cache/phantom_ci/{}",
-            cur_user,
-            repo.path
-                .split('/')
-                .last()
-                .unwrap_or(rand.to_string().as_str())
-        )
+        match OS {
+            "linux" => {
+                format!(
+                    "/home/{}/.cache/phantom_ci/{}",
+                    cur_user,
+                    repo.path
+                        .split('/')
+                        .last()
+                        .unwrap_or(rand.to_string().as_str())
+                )
+            }
+            "macos" => {
+                format!(
+                    "/Users/{}/Library/Caches/com.helloimalemur.phantom_ci/{}",
+                    cur_user,
+                    repo.path
+                        .split('/')
+                        .last()
+                        .unwrap_or(rand.to_string().as_str())
+                )
+            }
+            &_ => {
+                panic!("Unsupported OS!");
+            }
+        }
     }
 }
 
