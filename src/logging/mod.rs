@@ -1,5 +1,5 @@
 // logging.rs
-use log::{info, error};
+use log::{error, info};
 
 pub fn init() {
     env_logger::init();

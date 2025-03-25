@@ -1,12 +1,12 @@
 pub mod app;
 mod database;
+pub mod logging;
 pub mod options;
 pub mod parser;
 pub mod repo;
 pub mod scm;
 pub mod util;
 pub mod webhook;
-pub mod logging;
 
 use crate::app::AppState;
 use crate::database::setup_schema;
@@ -23,24 +23,25 @@ async fn main() {
     if let Some(config_dir) = default_config_path() {
         let sqlite_path = format!("{}/{}", config_dir, "db.sqlite");
         if let Ok(conn) = Connection::open(&sqlite_path) {
-            if let Err(e) = setup_schema(conn) {
+            if let Err(e) = setup_schema(&conn) {
                 eprintln!("Failed to setup schema: {:?}", e);
             }
+
+            if let Err(e) = load_env_variables(&config_dir) {
+                eprintln!("Error loading environment variables: {}", e);
+            }
+
+            let mut state = AppState::new();
+            state.set_db_conn(conn);
+
+            if let Err(e) = initialize_state(&mut state, &config_dir) {
+                eprintln!("Error initializing state: {}", e);
+            }
+
+            println!("Starting Git SCM polling...\n     config: {}", &config_dir);
+            let interval = state.scm_internal.clone();
+            poll_repos(state, Duration::from_secs(interval)).await;
         }
-
-        if let Err(e) = load_env_variables(&config_dir) {
-            eprintln!("Error loading environment variables: {}", e);
-        }
-
-        let mut state = AppState::new();
-
-        if let Err(e) = initialize_state(&mut state, &config_dir) {
-            eprintln!("Error initializing state: {}", e);
-        }
-
-        println!("Starting Git SCM polling...\n     config: {}", &config_dir);
-        let interval = state.scm_internal.clone();
-        poll_repos(state, Duration::from_secs(interval)).await;
     }
 }
 

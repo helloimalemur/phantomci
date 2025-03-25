@@ -1,6 +1,6 @@
 use rusqlite::Connection;
 
-pub fn setup_schema(db: Connection) -> Result<(), anyhow::Error> {
+pub fn setup_schema(db: &Connection) -> Result<(), anyhow::Error> {
     if let Err(e) = db.execute(
         "CREATE TABLE person (
             id    INTEGER PRIMARY KEY,
@@ -13,6 +13,6 @@ pub fn setup_schema(db: Connection) -> Result<(), anyhow::Error> {
     } else {
         println!("Table Created: person");
     }
-    
+
     Ok(())
 }

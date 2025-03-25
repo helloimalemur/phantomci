@@ -97,7 +97,7 @@ impl AppState {
         }
     }
 
-    pub fn set_db_conn(&mut self, db_conn: Arc<Mutex<Connection>>) {
-        self.db_conn = Some(db_conn);
+    pub fn set_db_conn(&mut self, db_conn: Connection) {
+        self.db_conn = Some(Arc::new(Mutex::new(db_conn)));
     }
 }
