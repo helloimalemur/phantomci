@@ -11,7 +11,7 @@ pub fn get_state_path() -> String {
     short_stamp.truncate(8);
     format!(
         "{}{}",
-        default_repo_work_path(".state".to_string()),
+        default_repo_work_path(".state".to_string()).unwrap(),
         short_stamp
     )
 }
@@ -21,7 +21,7 @@ pub fn get_previous_state_path() -> String {
     short_stamp.truncate(8);
     let mut num = short_stamp.parse::<i32>().unwrap();
     num -= 1;
-    format!("{}{}", default_repo_work_path(".state".to_string()), num)
+    format!("{}{}", default_repo_work_path(".state".to_string()).unwrap(), num)
 }
 
 pub fn save_state(app_state: SerializableState) {

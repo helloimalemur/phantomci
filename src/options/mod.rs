@@ -53,7 +53,7 @@ pub fn process_arguments(_app_state: &mut AppState, config_dir: &str) {
                 write_repo_to_config(Repo::new(
                     repo_name_only.clone(),
                     repo_path.to_owned(),
-                    default_repo_work_path(repo_path.to_owned()),
+                    default_repo_work_path(repo_path.to_owned()).unwrap(),
                     "workflow.toml".to_string(),
                     None,
                     branch,

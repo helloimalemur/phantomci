@@ -57,17 +57,38 @@ pub fn default_repo_work_path_remove_cache_data() {
     exit(0);
 }
 
-pub fn default_repo_work_path(repo_name: String) -> String {
-    let mut out = String::new();
+pub fn default_repo_work_path(repo_name: String) -> Option<String> {
     if let Ok(cur_user) = whoami::username() {
-        if cur_user.contains("root") {
-            out = format!("/root/.cache/phantom_ci/{}/", repo_name);
-        } else {
-            out = format!("/home/{}/.cache/phantom_ci/{}/", cur_user, repo_name);
-        }
-        let _ = fs::create_dir_all(Path::new(&out));
+        Some(match OS {
+            "linux" => {
+                if cur_user.contains("root") {
+                    let path = format!("/root/.cache/phantom_ci/{}", repo_name);
+                    let _ = fs::create_dir_all(&path);
+                    path
+                } else {
+                    let path = format!("/home/{}/.cache/phantom_ci/{}", cur_user, repo_name).to_string();
+                    let _ = fs::create_dir_all(&path);
+                    path
+                }
+            },
+            "macos" => {
+                if cur_user.contains("root") {
+                    let path = format!("/var/root/.cache/phantom_ci/{}", repo_name);
+                    let _ = fs::create_dir_all(&path);
+                    path
+                } else {
+                    let path = format!("/Users/{}/Library/Caches/com.helloimalemur.phantom_ci/{}", cur_user, repo_name).to_string();
+                    let _ = fs::create_dir_all(&path);
+                    path
+                }
+            },
+            &_ => {
+                panic!("invalid platform")
+            },
+        })
+    } else {
+        panic!("unable to determine user name");
     }
-    out
 }
 
 pub fn default_repo_work_path_delete(repo_name: String) -> Option<String> {

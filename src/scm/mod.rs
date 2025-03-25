@@ -100,7 +100,7 @@ async fn check_repo_triggered(repo: &mut Repo) {
         repo.triggered = false;
         let wp = format!(
             "{}workflow/{}.toml",
-            default_repo_work_path(repo.path.split('/').last().unwrap().to_string()),
+            default_repo_work_path(repo.path.split('/').last().unwrap().to_string()).unwrap(),
             repo.target_branch
         );
         let workflow_path = Path::new(&wp);
