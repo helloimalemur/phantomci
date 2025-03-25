@@ -74,6 +74,7 @@ impl AppState {
     pub fn add_repos_from_config(&mut self) {
         if let Some(config_dir) = default_config_path() {
             let mut left_out = self.get_serializable().repos.clone();
+            println!("Loading repos from config:");
             get_repo_from_config(&config_dir)
                 .iter_mut()
                 .for_each(|repo| {

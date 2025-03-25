@@ -34,9 +34,9 @@ async fn main() {
             let mut state = AppState::new();
             state.set_db_conn(conn);
 
-            // if let Err(e) = initialize_state(&mut state, &config_dir) {
-            //     eprintln!("Error initializing state: {}", e);
-            // }
+            if let Err(e) = initialize_state(&mut state, &config_dir) {
+                eprintln!("Error initializing state: {}", e);
+            }
 
             println!("Starting Git SCM polling...\n     config: {}", &config_dir);
             let interval = state.scm_internal.clone();
