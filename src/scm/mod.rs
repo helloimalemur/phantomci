@@ -127,7 +127,7 @@ pub async fn poll_repos(mut state: AppState, interval_duration: Duration) {
             check_repo_triggered(repo).await
         }
         state.repos.lock().unwrap().clone_from(&repos);
-        state.add_repos_from_config();
-        state.save_state();
+        // state.add_repos_from_config();
+        // state.save_state();
     }
 }

@@ -28,15 +28,15 @@ async fn main() {
             }
 
             if let Err(e) = load_env_variables(&config_dir) {
-                eprintln!("Error loading environment variables: {}", e);
+                eprintln!("environment variables not loaded: {}", e);
             }
 
             let mut state = AppState::new();
             state.set_db_conn(conn);
 
-            if let Err(e) = initialize_state(&mut state, &config_dir) {
-                eprintln!("Error initializing state: {}", e);
-            }
+            // if let Err(e) = initialize_state(&mut state, &config_dir) {
+            //     eprintln!("Error initializing state: {}", e);
+            // }
 
             println!("Starting Git SCM polling...\n     config: {}", &config_dir);
             let interval = state.scm_internal.clone();
