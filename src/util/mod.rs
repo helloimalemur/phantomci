@@ -69,30 +69,70 @@ pub fn default_repo_work_path(repo_name: String) -> String {
     out
 }
 
-pub fn default_repo_work_path_delete(repo_name: String) -> String {
-    let mut out = String::new();
+pub fn default_repo_work_path_delete(repo_name: String) -> Option<String> {
     if let Ok(cur_user) = whoami::username() {
-        if cur_user.contains("root") {
-            out = format!("/root/.cache/phantom_ci/{}/", repo_name);
-        } else {
-            out = format!("/home/{}/.cache/phantom_ci/{}/", cur_user, repo_name);
-        }
-        let _ = fs::remove_dir_all(Path::new(&out));
+        Some(match OS {
+            "linux" => {
+                if cur_user.contains("root") {
+                    let path = "/root/.cache/phantom_ci/".to_string();
+                    let _ = fs::create_dir_all(&path);
+                    path
+                } else {
+                    let path = format!("/home/{}/.cache/phantom_ci/", cur_user).to_string();
+                    let _ = fs::create_dir_all(&path);
+                    path
+                }
+            },
+            "macos" => {
+                if cur_user.contains("root") {
+                    let path = "/var/root/.cache/phantom_ci/".to_string();
+                    let _ = fs::create_dir_all(&path);
+                    path
+                } else {
+                    let path = format!("/Users/{}/Library/Caches/com.helloimalemur.phantom_ci/", cur_user).to_string();
+                    let _ = fs::create_dir_all(&path);
+                    path
+                }
+            },
+            &_ => {
+                panic!("invalid platform")
+            },
+        })
+    } else {
+        panic!("unable to determine user name");
     }
-    out
 }
 
 pub fn default_config_path() -> Option<String> {
-    let mut out = String::new();
     if let Ok(cur_user) = whoami::username() {
-        if cur_user.contains("root") {
-            out = "/root/.config/phantom_ci/".to_string();
-        } else {
-            out = format!("/home/{}/.config/phantom_ci/", cur_user);
-        }
-        if let Err(e) = fs::create_dir_all(Path::new(&out)) {
-            eprintln!("{}", e);
-        }
+        Some(match OS {
+            "linux" => {
+                if cur_user.contains("root") {
+                    let path = "/root/.config/phantom_ci/".to_string();
+                    let _ = fs::create_dir_all(&path);
+                    path
+                } else {
+                    let path = format!("/home/{}/.config/phantom_ci/", cur_user).to_string();
+                    let _ = fs::create_dir_all(&path);
+                    path
+                }
+            },
+            "macos" => {
+                if cur_user.contains("root") {
+                    let path = "/var/root/.config/phantom_ci/".to_string();
+                    let _ = fs::create_dir_all(&path);
+                    path
+                } else {
+                    let path = format!("/Users/{}/Library/Application\\ Support/com.helloimalemur.phantom_ci/", cur_user).to_string();
+                    let _ = fs::create_dir_all(&path);
+                    path
+                }
+            },
+            &_ => {
+                panic!("invalid platform")
+            },
+        })
+    } else {
+        panic!("unable to determine user name");
     }
-    Some(out)
 }
