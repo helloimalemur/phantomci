@@ -36,7 +36,5 @@ pub fn setup_schema(db: &Connection) -> Result<(), anyhow::Error> {
         println!("Table Created: job_logs");
     }
 
-
-
     Ok(())
 }

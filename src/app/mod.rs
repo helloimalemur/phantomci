@@ -84,7 +84,7 @@ impl AppState {
             left_out.iter().for_each(|remove_repo| {
                 println!("Removed from config: {}", remove_repo.1.name);
                 self.repos.lock().unwrap().remove(remove_repo.0.as_str());
-                default_repo_work_path_delete(remove_repo.1.name.clone());
+                default_repo_work_path_delete(remove_repo.1.name.clone()).unwrap();
             });
         }
     }
