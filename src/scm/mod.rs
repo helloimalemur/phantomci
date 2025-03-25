@@ -69,6 +69,7 @@ pub fn fetch_pull(repo: &Repo) -> Result<(), anyhow::Error> {
 
 // Check for changes in a repository and update repo
 fn check_repo_changes(repo: &mut Repo) {
+    println!("Checking repo changes... \n {}", &repo.name);
     if let Some(latest_sha) = fetch_latest_sha(repo) {
         // check sqlite
         // last sha
