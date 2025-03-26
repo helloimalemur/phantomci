@@ -21,5 +21,7 @@ async fn main() {
             let mut state = AppState::new(conn, config_dir.clone());
             poll_repos(&mut state).await;
         }
+    } else {
+        panic!("No config file specified");
     }
 }
