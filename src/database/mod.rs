@@ -1,6 +1,6 @@
+use crate::load_env_variables;
 use anyhow::Error;
 use rusqlite::Connection;
-use crate::load_env_variables;
 
 #[derive(Debug, Clone)]
 pub struct Job {

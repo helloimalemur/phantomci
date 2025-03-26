@@ -1,13 +1,13 @@
 mod state;
 
 use crate::app::state::{get_previous_state_path, get_state_path, save_state};
+use crate::options::process_arguments;
 use crate::repo::{get_repo_from_config, Repo};
 use crate::util::{default_config_path, default_repo_work_path_delete};
 use rusqlite::Connection;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use std::process::exit;
 use std::sync::{Arc, Mutex};
 
 // Struct to hold application state
@@ -24,12 +24,15 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(conn: Connection) -> Self {
-        Self {
+    pub fn new(conn: Connection, config_dir: String) -> Self {
+        let mut state = AppState {
             repos: Arc::new(Mutex::new(HashMap::new())),
             scm_internal: 15,
             db_conn: Some(Arc::new(Mutex::new(conn))),
-        }
+        };
+        state.add_repos_from_config();
+        process_arguments(&mut state, config_dir.as_str());
+        state
     }
     pub fn save_state(&self) {
         save_state(self.get_serializable());

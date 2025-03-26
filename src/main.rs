@@ -22,23 +22,13 @@ async fn main() {
     logging::init();
     if let Some(config_dir) = default_config_path() {
         if let Ok(conn) = create_connection(config_dir.clone()) {
-            let mut state = AppState::new(conn);
-
-            if let Err(e) = initialize_state(&mut state, &config_dir) {
-                eprintln!("Error initializing state: {}", e);
-            }
+            let mut state = AppState::new(conn, config_dir.clone());
 
             println!("Starting Git SCM polling...\n     config: {}", &config_dir);
             let interval = state.scm_internal.clone();
             poll_repos(state, Duration::from_secs(interval)).await;
         }
     }
-}
-
-fn initialize_state(state: &mut AppState, config_dir: &str) -> Result<(), anyhow::Error> {
-    // state.restore_state();
-    state.add_repos_from_config();
-    Ok(process_arguments(state, config_dir))
 }
 
 fn load_env_variables(path: &str) -> Result<(), dotenv::Error> {

@@ -3,12 +3,12 @@ use crate::util::default_config_path;
 use crate::webhook::{Webhook, WebhookConfig, WebhookType};
 use config::Config;
 use std::collections::HashMap;
+use std::env::consts::OS;
 use std::fs::OpenOptions;
 use std::io::{BufRead, Write};
 use std::path::Path;
 use std::process::{exit, Command};
 use std::{env, fs};
-use std::env::consts::OS;
 
 // Struct to represent a repository
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
