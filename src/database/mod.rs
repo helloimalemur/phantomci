@@ -1,4 +1,43 @@
+use anyhow::Error;
 use rusqlite::Connection;
+use crate::load_env_variables;
+
+#[derive(Debug, Clone)]
+pub struct Job {
+    pub id: i32,
+    pub description: String,
+    pub status: String,
+    pub priority: i32,
+    pub created_at: String,
+    pub updated_at: String,
+    pub start_time: String,
+    pub finish_time: String,
+    pub error_message: String,
+    pub result: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct JobLog {
+    pub id: i32,
+    pub job_id: i32,
+    pub log_message: String,
+    pub logged_at: String,
+}
+
+pub fn create_connection(config_dir: String) -> Result<Connection, Error> {
+    let sqlite_path = format!("{}/{}", config_dir, "db.sqlite");
+    if let Err(e) = load_env_variables(&config_dir) {
+        eprintln!("environment variables not loaded: {}", e);
+    }
+    if let Ok(conn) = Connection::open(&sqlite_path) {
+        if let Err(e) = setup_schema(&conn) {
+            eprintln!("Failed to setup schema: {:?}", e);
+        }
+        Ok(conn)
+    } else {
+        anyhow::bail!("Failed to connect to database");
+    }
+}
 
 pub fn setup_schema(db: &Connection) -> Result<(), anyhow::Error> {
     if let Err(e) = db.execute(

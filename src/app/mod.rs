@@ -23,18 +23,12 @@ pub struct AppState {
     pub db_conn: Option<Arc<Mutex<Connection>>>,
 }
 
-impl Default for AppState {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl AppState {
-    pub fn new() -> Self {
+    pub fn new(conn: Connection) -> Self {
         Self {
             repos: Arc::new(Mutex::new(HashMap::new())),
             scm_internal: 15,
-            db_conn: None,
+            db_conn: Some(Arc::new(Mutex::new(conn))),
         }
     }
     pub fn save_state(&self) {

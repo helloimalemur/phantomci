@@ -9,7 +9,7 @@ pub mod util;
 pub mod webhook;
 
 use crate::app::AppState;
-use crate::database::setup_schema;
+use crate::database::{create_connection, setup_schema};
 use crate::options::process_arguments;
 use crate::scm::poll_repos;
 use crate::util::default_config_path;
@@ -21,18 +21,8 @@ use std::time::Duration;
 async fn main() {
     logging::init();
     if let Some(config_dir) = default_config_path() {
-        let sqlite_path = format!("{}/{}", config_dir, "db.sqlite");
-        if let Ok(conn) = Connection::open(&sqlite_path) {
-            if let Err(e) = setup_schema(&conn) {
-                eprintln!("Failed to setup schema: {:?}", e);
-            }
-
-            if let Err(e) = load_env_variables(&config_dir) {
-                eprintln!("environment variables not loaded: {}", e);
-            }
-
-            let mut state = AppState::new();
-            state.set_db_conn(conn);
+        if let Ok(conn) = create_connection(config_dir.clone()) {
+            let mut state = AppState::new(conn);
 
             if let Err(e) = initialize_state(&mut state, &config_dir) {
                 eprintln!("Error initializing state: {}", e);
