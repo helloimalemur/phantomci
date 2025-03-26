@@ -1,7 +1,7 @@
 use crate::app::AppState;
 use crate::parser::parse_workflow;
 use crate::repo::Repo;
-use crate::util::default_repo_work_path;
+use crate::util::{default_config_path, default_repo_work_path};
 use chrono::Local;
 use std::path::Path;
 use std::process::Command;
@@ -116,8 +116,12 @@ async fn check_repo_triggered(repo: &mut Repo) {
     }
 }
 
-// Main polling logic
-pub async fn poll_repos(mut state: AppState, interval_duration: Duration) {
+pub async fn poll_repos(mut state: &mut AppState) {
+    println!(
+        "Starting Git SCM polling...\n     config: {}",
+        default_config_path().unwrap()
+    );
+    let interval_duration = Duration::new(state.scm_internal.clone(), 0);
     let mut ticker = interval(interval_duration);
 
     loop {

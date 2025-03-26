@@ -1,4 +1,4 @@
-use crate::load_env_variables;
+use std::path::Path;
 use anyhow::Error;
 use rusqlite::Connection;
 
@@ -22,6 +22,11 @@ pub struct JobLog {
     pub job_id: i32,
     pub log_message: String,
     pub logged_at: String,
+}
+
+fn load_env_variables(path: &str) -> rusqlite::Result<(), dotenv::Error> {
+    let env_path = format!("{}.env", path);
+    dotenv::from_path(Path::new(&env_path)).map(|_| println!("env: {}", env_path))
 }
 
 pub fn create_connection(config_dir: String) -> Result<Connection, Error> {
