@@ -1,6 +1,6 @@
-use std::path::Path;
 use anyhow::Error;
 use rusqlite::Connection;
+use std::path::Path;
 
 #[derive(Debug, Clone)]
 pub struct Job {

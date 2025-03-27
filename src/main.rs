@@ -4,7 +4,6 @@ pub mod logging;
 pub mod options;
 pub mod parser;
 pub mod repo;
-pub mod scm;
 pub mod util;
 pub mod webhook;
 

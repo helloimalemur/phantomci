@@ -1,10 +1,10 @@
+use crate::app::state::AppState;
 use crate::repo::{create_default_config, load_repos_from_config, write_repo_to_config, Repo};
 use crate::util::service::configure_systemd;
 use crate::util::{default_repo_work_path, default_repo_work_path_remove_cache_data};
 use clap::{Parser, Subcommand};
 use std::path::Path;
 use std::process::exit;
-use crate::app::state::AppState;
 
 #[derive(Debug, Clone, Parser)]
 pub struct Arguments {

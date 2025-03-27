@@ -1,13 +1,13 @@
-use crate::util::default_repo_work_path;
-use chrono::Local;
-use std::fs::OpenOptions;
-use std::io::Write;
 use crate::options::process_arguments;
 use crate::repo::{load_repos_from_config, Repo};
+use crate::util::default_repo_work_path;
 use crate::util::{default_config_path, default_repo_work_path_delete};
+use chrono::Local;
 use rusqlite::Connection;
 use std::collections::HashMap;
 use std::fs;
+use std::fs::OpenOptions;
+use std::io::Write;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -123,7 +123,6 @@ impl AppState {
         }
     }
 }
-
 
 pub fn get_state_path() -> String {
     let mut short_stamp = Local::now().timestamp().to_string();

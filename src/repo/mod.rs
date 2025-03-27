@@ -1,6 +1,7 @@
-use crate::scm::fetch_latest_sha;
+use crate::parser::parse_workflow;
 use crate::util::{default_config_path, default_repo_work_path};
 use crate::webhook::{Webhook, WebhookConfig, WebhookType};
+use chrono::Local;
 use config::Config;
 use std::collections::HashMap;
 use std::env::consts::OS;
@@ -9,8 +10,6 @@ use std::io::{BufRead, Write};
 use std::path::Path;
 use std::process::{exit, Command};
 use std::{env, fs};
-use chrono::Local;
-use crate::parser::parse_workflow;
 
 // Struct to represent a repository
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
@@ -72,7 +71,7 @@ impl Repo {
             get_default_branch(self);
         }
 
-        self.last_sha = fetch_latest_sha(&self)
+        self.last_sha = self.fetch_latest_sha()
     }
 
     pub async fn send_webhook(&self, message: String, repo: &Repo) {
@@ -98,9 +97,9 @@ impl Repo {
         }
     }
 
-    pub(crate) fn check_repo_changes(&mut self) {
+    pub fn check_repo_changes(&mut self) {
         println!("Checking repo changes... \n {}", &self.name);
-        if let Some(latest_sha) = fetch_latest_sha(self) {
+        if let Some(latest_sha) = self.fetch_latest_sha() {
             // check sqlite
             // last sha
             if self.last_sha.as_ref() != Some(&latest_sha) {
@@ -124,7 +123,7 @@ impl Repo {
     }
 
     // Check for changes in a repository and handle them
-    pub(crate) async fn check_repo_triggered(&mut self) {
+    pub async fn check_repo_triggered(&mut self) {
         if self.triggered {
             // Parse workflow file
             // let workflow_path = Path::new(&repo.path).join(&repo.workflow_file);
@@ -146,6 +145,63 @@ impl Repo {
         }
     }
 
+    pub fn fetch_latest_sha(&mut self) -> Option<String> {
+        if let Err(e) = self.fetch_pull() {
+            eprintln!("Error: {}", e)
+        }
+        let output = Command::new("git")
+            .arg("-C")
+            .arg(&self.work_dir)
+            .arg("rev-parse")
+            .arg("HEAD")
+            .output();
+
+        match output {
+            Ok(output) if output.status.success() => {
+                Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
+            }
+            _ => {
+                eprintln!("Error: scm polling error: {}", self.name);
+                None
+            }
+        }
+    }
+
+    pub fn fetch_pull(&mut self) -> Result<(), anyhow::Error> {
+        Command::new("git")
+            .arg("-C")
+            .arg(&self.work_dir)
+            .arg("stash")
+            .output()?;
+
+        Command::new("git")
+            .arg("-C")
+            .arg(&self.work_dir)
+            .arg("checkout")
+            .arg(&self.target_branch)
+            .output()?;
+
+        Command::new("git")
+            .arg("-C")
+            .arg(&self.work_dir)
+            .arg("reset")
+            .arg("--hard")
+            .arg("HEAD")
+            .output()?;
+
+        Command::new("git")
+            .arg("-C")
+            .arg(&self.work_dir)
+            .arg("fetch")
+            .output()?;
+
+        Command::new("git")
+            .arg("-C")
+            .arg(&self.work_dir)
+            .arg("pull")
+            .output()?;
+        Ok(())
+    }
 }
 
 pub fn write_repo_to_config(repo: Repo) {
