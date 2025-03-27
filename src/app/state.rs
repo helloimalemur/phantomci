@@ -10,6 +10,8 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
+use tokio::time::interval;
 
 // Struct to hold application state
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -98,6 +100,27 @@ impl AppState {
 
     pub fn set_db_conn(&mut self, db_conn: Connection) {
         self.db_conn = Some(Arc::new(Mutex::new(db_conn)));
+    }
+
+    pub async fn poll_repos(&mut self) {
+        println!(
+            "Starting Git SCM polling...\n     config: {}",
+            default_config_path().unwrap()
+        );
+        let interval_duration = Duration::new(self.scm_internal.clone(), 0);
+        let mut ticker = interval(interval_duration);
+
+        loop {
+            ticker.tick().await;
+            let mut repos = self.repos.lock().unwrap().to_owned();
+            for (_, repo) in repos.iter_mut() {
+                repo.check_repo_changes();
+                repo.check_repo_triggered().await
+            }
+            self.repos.lock().unwrap().clone_from(&repos);
+            // state.add_repos_from_config();
+            // state.save_state();
+        }
     }
 }
 

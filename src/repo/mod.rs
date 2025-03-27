@@ -1,5 +1,5 @@
 use crate::scm::fetch_latest_sha;
-use crate::util::default_config_path;
+use crate::util::{default_config_path, default_repo_work_path};
 use crate::webhook::{Webhook, WebhookConfig, WebhookType};
 use config::Config;
 use std::collections::HashMap;
@@ -9,6 +9,8 @@ use std::io::{BufRead, Write};
 use std::path::Path;
 use std::process::{exit, Command};
 use std::{env, fs};
+use chrono::Local;
+use crate::parser::parse_workflow;
 
 // Struct to represent a repository
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
@@ -95,6 +97,55 @@ impl Repo {
             webhook.send().await;
         }
     }
+
+    pub(crate) fn check_repo_changes(&mut self) {
+        println!("Checking repo changes... \n {}", &self.name);
+        if let Some(latest_sha) = fetch_latest_sha(self) {
+            // check sqlite
+            // last sha
+            if self.last_sha.as_ref() != Some(&latest_sha) {
+                println!("========================================================");
+                println!("{}", Local::now().format("%Y-%m-%d %H:%M:%S"));
+                println!(
+                    "Change detected in repo: {}\nNew SHA: {}",
+                    self.path, latest_sha
+                );
+
+                self.last_sha = Some(latest_sha.to_owned());
+                // write sha
+
+                self.triggered = true;
+
+                println!("========================================================");
+            }
+        } else {
+            eprintln!("Failed to fetch latest SHA for repo at {}", self.path);
+        }
+    }
+
+    // Check for changes in a repository and handle them
+    pub(crate) async fn check_repo_triggered(&mut self) {
+        if self.triggered {
+            // Parse workflow file
+            // let workflow_path = Path::new(&repo.path).join(&repo.workflow_file);
+            self.triggered = false;
+            let wp = format!(
+                "{}workflow/{}.toml",
+                default_repo_work_path(self.path.split('/').last().unwrap().to_string()).unwrap(),
+                self.target_branch
+            );
+            let workflow_path = Path::new(&wp);
+            if workflow_path.exists() {
+                parse_workflow(workflow_path.to_str().unwrap(), self.to_owned()).await;
+            } else {
+                eprintln!(
+                    "Workflow file not found at {}",
+                    workflow_path.to_str().unwrap()
+                );
+            }
+        }
+    }
+
 }
 
 pub fn write_repo_to_config(repo: Repo) {
