@@ -1,6 +1,6 @@
-use crate::options::process_arguments;
-use crate::repo::{load_repos_from_config, Repo};
-use crate::util::default_repo_work_path;
+use crate::options::{Arguments, Command};
+use crate::repo::{create_default_config, load_repos_from_config, Repo};
+use crate::util::{default_repo_work_path, default_repo_work_path_remove_cache_data};
 use crate::util::{default_config_path, default_repo_work_path_delete};
 use chrono::Local;
 use rusqlite::Connection;
@@ -9,9 +9,12 @@ use std::fs;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::Path;
+use std::process::exit;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use clap::Parser;
 use tokio::time::interval;
+use crate::util::service::configure_systemd;
 
 // Struct to hold application state
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -34,9 +37,95 @@ impl AppState {
             db_conn: Some(Arc::new(Mutex::new(conn))),
         };
         state.add_repos_from_config();
-        process_arguments(&mut state, config_dir.as_str());
+        state.process_arguments(config_dir.as_str());
         state
     }
+
+    pub fn process_arguments(&mut self, config_dir: &str) {
+        let repo_config = format!("{}Repo.toml", &config_dir);
+        if !Path::new(&repo_config.as_str()).exists() {
+            create_default_config(&repo_config);
+        }
+        let arguments = Arguments::parse();
+
+        match arguments.command {
+            None => {}
+            Some(Command::Add {
+                     path: Some(repo_path),
+                     branch: Some(branch_name),
+                 }) => {
+                if branch_name.len() == 0 {
+                    println!("Branch name is empty");
+                    exit(1);
+                }
+                if !repo_path.is_empty() {
+                    let repo_name_only = repo_path
+                        .split('/')
+                        .last()
+                        .to_owned()
+                        .unwrap_or("0")
+                        .to_string();
+                    println!("Adding repo: {}", &repo_name_only);
+                    Repo::new(
+                        repo_name_only.clone(),
+                        repo_path.to_owned(),
+                        default_repo_work_path(repo_path.to_owned()).unwrap(),
+                        None,
+                        branch_name,
+                        false,
+                    )
+                        .write_repo_to_config();
+                    exit(0);
+                }
+            }
+
+            Some(Command::Add {
+                     path: Some(path),
+                     branch: None,
+                 }) => {
+                println!("Missing branch name: {}", &path);
+                exit(1);
+            }
+            Some(Command::Add {
+                     path: None,
+                     branch: Some(branch),
+                 }) => {
+                println!("Missing repo path: {}", &branch);
+                exit(1);
+            }
+            Some(Command::Add {
+                     path: None,
+                     branch: None,
+                 }) => {
+                println!("Missing repo path");
+                exit(1);
+            }
+            Some(Command::Configure { sub }) => match sub.as_str() {
+                "service" => {
+                    configure_systemd();
+                    exit(0);
+                }
+                &_ => {
+                    println!("Invalid subcommand");
+                    exit(1);
+                }
+            },
+            Some(Command::Reload) => {
+                default_repo_work_path_remove_cache_data();
+            }
+            Some(Command::List) => {
+                let repo_config_path = format!("{}Repo.toml", config_dir);
+                println!("Listing repos: {}", repo_config_path);
+                let repo = load_repos_from_config(config_dir);
+                for re in repo.iter() {
+                    println!("{} - {}", re.path, re.target_branch);
+                }
+                exit(0);
+            }
+        }
+    }
+
+
     pub fn save_state(&self) {
         save_state(self.get_serialized_state());
     }
