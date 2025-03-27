@@ -1,5 +1,5 @@
 use crate::app::state::AppState;
-use crate::repo::{create_default_config, load_repos_from_config, write_repo_to_config, Repo};
+use crate::repo::{create_default_config, load_repos_from_config, Repo};
 use crate::util::service::configure_systemd;
 use crate::util::{default_repo_work_path, default_repo_work_path_remove_cache_data};
 use clap::{Parser, Subcommand};
@@ -50,14 +50,15 @@ pub fn process_arguments(_app_state: &mut AppState, config_dir: &str) {
                     .unwrap_or("0")
                     .to_string();
                 println!("Adding repo: {}", &repo_name_only);
-                write_repo_to_config(Repo::new(
+                Repo::new(
                     repo_name_only.clone(),
                     repo_path.to_owned(),
                     default_repo_work_path(repo_path.to_owned()).unwrap(),
                     None,
                     branch_name,
                     false,
-                ));
+                )
+                .write_repo_to_config();
                 exit(0);
             }
         }
