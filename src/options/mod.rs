@@ -36,9 +36,9 @@ pub fn process_arguments(_app_state: &mut AppState, config_dir: &str) {
         None => {}
         Some(Command::Add {
             path: Some(repo_path),
-            branch: Some(branch),
+            branch: Some(branch_name),
         }) => {
-            if branch.len() == 0 {
+            if branch_name.len() == 0 {
                 println!("Branch name is empty");
                 exit(1);
             }
@@ -54,9 +54,8 @@ pub fn process_arguments(_app_state: &mut AppState, config_dir: &str) {
                     repo_name_only.clone(),
                     repo_path.to_owned(),
                     default_repo_work_path(repo_path.to_owned()).unwrap(),
-                    "workflow.toml".to_string(),
                     None,
-                    branch,
+                    branch_name,
                     false,
                 ));
                 exit(0);
@@ -98,8 +97,8 @@ pub fn process_arguments(_app_state: &mut AppState, config_dir: &str) {
             default_repo_work_path_remove_cache_data();
         }
         Some(Command::List) => {
-            let repo_config = format!("{}Repo.toml", config_dir);
-            println!("Listing repos: {}", repo_config);
+            let repo_config_path = format!("{}Repo.toml", config_dir);
+            println!("Listing repos: {}", repo_config_path);
             let repo = load_repos_from_config(config_dir);
             for re in repo.iter() {
                 println!("{} - {}", re.path, re.target_branch);

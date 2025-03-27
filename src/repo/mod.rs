@@ -16,7 +16,6 @@ pub struct Repo {
     pub name: String,
     pub path: String,
     pub work_dir: String,
-    pub workflow_file: String,
     pub last_sha: Option<String>,
     pub target_branch: String,
     pub triggered: bool,
@@ -34,7 +33,6 @@ impl Default for Repo {
             name: "".to_string(),
             path: "".to_string(),
             work_dir: "".to_string(),
-            workflow_file: "".to_string(),
             last_sha: None,
             target_branch: "master".to_string(),
             triggered: false,
@@ -47,7 +45,6 @@ impl Repo {
         name: String,
         path: String,
         work_dir: String,
-        workflow_file: String,
         last_sha: Option<String>,
         target_branch: String,
         triggered: bool,
@@ -56,7 +53,6 @@ impl Repo {
             name,
             path,
             work_dir,
-            workflow_file,
             last_sha,
             target_branch,
             triggered,
@@ -136,7 +132,6 @@ pub fn load_repos_from_config(config_dir: &str) -> Vec<Repo> {
                     name: r.0.to_string(),
                     path: r.1.path.to_string(),
                     work_dir: repo_work_dir(r.1),
-                    workflow_file: "workflow.toml".to_string(),
                     last_sha: None,
                     target_branch: r.1.to_owned().target_branch.unwrap_or("master".to_string()),
                     triggered: false,
@@ -160,7 +155,7 @@ pub fn load_repos_from_config(config_dir: &str) -> Vec<Repo> {
 pub fn create_default_config(path: &String) {
     let default_config = r#"
 ##[sys-compare]
-##path = "https://github.com/helloimalemur/sys-compare"
+##path = "git@github.com:helloimalemur/sys-compare"
 ##target_branch = "master"
 
 "#;
