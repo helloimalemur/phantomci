@@ -67,8 +67,8 @@ impl Repo {
         if !Path::new(&self.work_dir).exists()
             && fs::create_dir_all(Path::new(&self.work_dir)).is_ok()
         {
-            clone_repo(self);
-            get_default_branch(self);
+            self.clone_repo();
+            self.get_default_branch();
         }
 
         self.last_sha = self.fetch_latest_sha()
@@ -223,6 +223,57 @@ impl Repo {
             }
         }
     }
+
+    fn clone_repo(&mut self) {
+        let p = self
+            .work_dir
+            .replace(self.work_dir.split('/').last().unwrap(), "");
+        if let Ok(_output) = Command::new("git")
+            .arg("-C")
+            .arg(p)
+            .arg("clone")
+            .arg(&self.path)
+            .output()
+        {
+            let git_repo_path = format!("{}/.git", self.work_dir);
+            if Path::new(&git_repo_path).exists() {
+                println!("Cloned successfully: {}", self.path);
+            } else {
+                println!("Failed to clone: {}", self.path);
+                let _ = fs::remove_dir(Path::new(&self.work_dir));
+            }
+        }
+    }
+
+    fn get_default_branch(&mut self) -> String {
+        let mut head_branch = "master".to_string();
+
+        if let Ok(output) = Command::new("git")
+            .arg("-C")
+            .arg(&self.work_dir)
+            .arg("remote")
+            .arg("show")
+            .arg(&self.path)
+            .output()
+        {
+            let lines = output.stdout.lines();
+            if let Some(s) = lines
+                .map(|l| l.unwrap())
+                .filter(|l| l.contains("HEAD branch:"))
+                .map(|l| l.replace("HEAD branch:", ""))
+                .next()
+            {
+                head_branch = s.trim().to_string();
+                println!("Default branch: {}", head_branch);
+            }
+        }
+
+        if self.target_branch.is_empty() {
+            self.target_branch = head_branch.to_owned();
+        }
+
+        head_branch
+    }
 }
 
 pub fn load_repos_from_config(config_dir: &str) -> Vec<Repo> {
@@ -325,55 +376,4 @@ pub fn repo_work_dir(repo: &Repos) -> String {
             }
         }
     }
-}
-
-fn clone_repo(repo: &Repo) {
-    let p = repo
-        .work_dir
-        .replace(repo.work_dir.split('/').last().unwrap(), "");
-    if let Ok(_output) = Command::new("git")
-        .arg("-C")
-        .arg(p)
-        .arg("clone")
-        .arg(&repo.path)
-        .output()
-    {
-        let git_repo_path = format!("{}/.git", repo.work_dir);
-        if Path::new(&git_repo_path).exists() {
-            println!("Cloned successfully: {}", repo.path);
-        } else {
-            println!("Failed to clone: {}", repo.path);
-            let _ = fs::remove_dir(Path::new(&repo.work_dir));
-        }
-    }
-}
-
-fn get_default_branch(repo: &mut Repo) -> String {
-    let mut head_branch = "master".to_string();
-
-    if let Ok(output) = Command::new("git")
-        .arg("-C")
-        .arg(&repo.work_dir)
-        .arg("remote")
-        .arg("show")
-        .arg(&repo.path)
-        .output()
-    {
-        let lines = output.stdout.lines();
-        if let Some(s) = lines
-            .map(|l| l.unwrap())
-            .filter(|l| l.contains("HEAD branch:"))
-            .map(|l| l.replace("HEAD branch:", ""))
-            .next()
-        {
-            head_branch = s.trim().to_string();
-            println!("Default branch: {}", head_branch);
-        }
-    }
-
-    if repo.target_branch.is_empty() {
-        repo.target_branch = head_branch.to_owned();
-    }
-
-    head_branch
 }
