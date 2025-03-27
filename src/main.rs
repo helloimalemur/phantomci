@@ -8,7 +8,7 @@ pub mod scm;
 pub mod util;
 pub mod webhook;
 
-use crate::app::AppState;
+use crate::app::state::AppState;
 use crate::database::create_connection;
 use crate::scm::poll_repos;
 use crate::util::default_config_path;

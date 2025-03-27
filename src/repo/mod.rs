@@ -122,7 +122,7 @@ pub fn write_repo_to_config(repo: Repo) {
     }
 }
 
-pub fn get_repo_from_config(config_dir: &str) -> Vec<Repo> {
+pub fn load_repos_from_config(config_dir: &str) -> Vec<Repo> {
     let repo_config = format!("{}Repo.toml", &config_dir);
     let mut repos = vec![];
     if let Ok(config_file) = Config::builder()

@@ -31,9 +31,11 @@ fn load_env_variables(path: &str) -> rusqlite::Result<(), dotenv::Error> {
 
 pub fn create_connection(config_dir: String) -> Result<Connection, Error> {
     let sqlite_path = format!("{}/{}", config_dir, "db.sqlite");
+
     if let Err(e) = load_env_variables(&config_dir) {
         eprintln!("environment variables not loaded: {}", e);
     }
+
     if let Ok(conn) = Connection::open(&sqlite_path) {
         if let Err(e) = setup_schema(&conn) {
             eprintln!("Failed to setup schema: {:?}", e);

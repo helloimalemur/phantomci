@@ -1,10 +1,10 @@
-use crate::app::AppState;
-use crate::repo::{create_default_config, get_repo_from_config, write_repo_to_config, Repo};
+use crate::repo::{create_default_config, load_repos_from_config, write_repo_to_config, Repo};
 use crate::util::service::configure_systemd;
 use crate::util::{default_repo_work_path, default_repo_work_path_remove_cache_data};
 use clap::{Parser, Subcommand};
 use std::path::Path;
 use std::process::exit;
+use crate::app::state::AppState;
 
 #[derive(Debug, Clone, Parser)]
 pub struct Arguments {
@@ -100,7 +100,7 @@ pub fn process_arguments(_app_state: &mut AppState, config_dir: &str) {
         Some(Command::List) => {
             let repo_config = format!("{}Repo.toml", config_dir);
             println!("Listing repos: {}", repo_config);
-            let repo = get_repo_from_config(config_dir);
+            let repo = load_repos_from_config(config_dir);
             for re in repo.iter() {
                 println!("{} - {}", re.path, re.target_branch);
             }
