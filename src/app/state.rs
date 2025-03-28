@@ -33,7 +33,7 @@ impl AppState {
     pub fn new(conn: Connection, config_dir: String) -> Self {
         let mut state = AppState {
             repos: Arc::new(Mutex::new(HashMap::new())),
-            scm_internal: 15,
+            scm_internal: 60,
             db_conn: Some(Arc::new(Mutex::new(conn))),
         };
         state.add_repos_from_config();
