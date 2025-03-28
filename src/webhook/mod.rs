@@ -1,4 +1,4 @@
-use discord_webhook_lib::send_discord;
+use discord_webhook_lib::DiscordMessage;
 
 pub enum WebhookType {
     Discord,
@@ -44,13 +44,12 @@ impl Webhook {
     pub async fn send(&self) {
         match self.webhook_config.webhook_type {
             WebhookType::Discord => {
-                if let Err(e) = send_discord(
-                    self.webhook_config.url.as_str(),
-                    self.webhook_config.message.as_str(),
-                    self.webhook_config.title.as_str(),
-                )
-                .await
-                {
+                let mut message = DiscordMessage::builder(self.webhook_config.url.as_str());
+                message.add_message(self.webhook_config.message.as_str());
+                message.add_field("title", self.webhook_config.title.as_str());
+                let sender = message.build();
+
+                if let Err(e) = sender.send().await {
                     eprintln!("{}", e)
                 }
             }

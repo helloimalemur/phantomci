@@ -1,6 +1,6 @@
 [package]
 name = "phantom_ci"
-version = "0.1.2"
+version = "0.1.201"
 edition = "2021"
 description = "Secure Headless Self-Hosted Runner"
 keywords = ["self-hosted", "git", "scm", "cicd"]
@@ -8,17 +8,17 @@ authors = ["james@koonts.net"]
 license = "MIT"
 
 [dependencies]
-chrono = "0.4.38"
-clap = { version = "4.5.21", features = ["derive"] }
-config = "0.15.4"
-discord-webhook-lib = "0.1.7"
+anyhow = "1.0.97"
+chrono = "0.4.40"
+clap = { version = "4.5.34", features = ["derive"] }
+config = "0.15.11"
+discord-webhook-lib = "0.2.1"
 dotenv = "0.15.0"
-rand = "0.9.0-beta.0"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-tokio = { version = "1", features = ["full"] }
-whoami = "2.0.0-pre.0"
-anyhow = "1.0.94"
-rusqlite = "0.34.0"
 env_logger = "0.11.7"
-log = "0.4.22"
+log = "0.4.27"
+rand = "0.9.0"
+rusqlite = "0.34.0"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+tokio = { version = "1.44.1", features = ["full"] }
+whoami = "2.0.0-pre.2"
