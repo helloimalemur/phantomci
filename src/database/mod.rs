@@ -94,87 +94,23 @@ impl Job {
     }
 
     pub fn get_jobs_by_status(status: String) -> Vec<Job> {
-        if let Ok(sql) = SqliteConnection::new() {
-            let mut jobs: Vec<Job> = vec![];
-            let res = sql.conn.prepare(
-                "SELECT * FROM jobs",
-            );
-
-            if let Ok(mut stmt) = sql.conn.prepare("SELECT * FROM jobs") {
-                let job_iter = stmt.query_map([], |row| {
-                    Ok(Job {
-                        id: row.get(0)?,
-                        repo: row.get(1)?,
-                        status: row.get(2)?,
-                        priority: row.get(3)?,
-                        created_at: row.get(4)?,
-                        updated_at: row.get(5)?,
-                        start_time: row.get(6)?,
-                        finish_time: row.get(7)?,
-                        error_message: row.get(8)?,
-                        result: row.get(9)?,
-                        sha: row.get(10)?,
-                    })
-                });
-
-                if let Ok(job_iter) = job_iter {
-                    for job in job_iter {
-                        if let Ok(job) = job {
-                            if job.status == status {
-                                jobs.push(job);
-                            }
-                        }
-                    }
-                }
+        let mut jobs = Job::get_jobs();
+        for job in jobs.clone() {
+            if job.status == status {
+                jobs.push(job);
             }
-
-            jobs
-        } else {
-            eprintln!("Error: unable to run query");
-            vec![]
         }
+        jobs
     }
 
-    pub fn get_jobs_by_repo(status: String) -> Vec<Job> {
-        if let Ok(sql) = SqliteConnection::new() {
-            let mut jobs: Vec<Job> = vec![];
-            let res = sql.conn.prepare(
-                "SELECT * FROM jobs",
-            );
-
-            if let Ok(mut stmt) = sql.conn.prepare("SELECT * FROM jobs") {
-                let job_iter = stmt.query_map([], |row| {
-                    Ok(Job {
-                        id: row.get(0)?,
-                        repo: row.get(1)?,
-                        status: row.get(2)?,
-                        priority: row.get(3)?,
-                        created_at: row.get(4)?,
-                        updated_at: row.get(5)?,
-                        start_time: row.get(6)?,
-                        finish_time: row.get(7)?,
-                        error_message: row.get(8)?,
-                        result: row.get(9)?,
-                        sha: row.get(10)?,
-                    })
-                });
-
-                if let Ok(job_iter) = job_iter {
-                    for job in job_iter {
-                        if let Ok(job) = job {
-                            if job.status == status {
-                                jobs.push(job);
-                            }
-                        }
-                    }
-                }
+    pub fn get_jobs_by_repo(repo: String) -> Vec<Job> {
+        let mut jobs = Job::get_jobs();
+        for job in jobs.clone() {
+            if job.repo == repo {
+                jobs.push(job);
             }
-
-            jobs
-        } else {
-            eprintln!("Error: unable to run query");
-            vec![]
         }
+        jobs
     }
 
     // fn read_by(job_column: JobColumn, column_value: String) -> Job {
