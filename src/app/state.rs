@@ -1,8 +1,11 @@
+use crate::database::SqliteConnection;
 use crate::options::{Arguments, Command};
 use crate::repo::{create_default_config, load_repos_from_config, Repo};
-use crate::util::{default_repo_work_path, default_repo_work_path_remove_cache_data};
+use crate::util::service::configure_systemd;
 use crate::util::{default_config_path, default_repo_work_path_delete};
+use crate::util::{default_repo_work_path, default_repo_work_path_remove_cache_data};
 use chrono::Local;
+use clap::Parser;
 use rusqlite::Connection;
 use std::collections::HashMap;
 use std::fs;
@@ -12,9 +15,7 @@ use std::path::Path;
 use std::process::exit;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use clap::Parser;
 use tokio::time::interval;
-use crate::util::service::configure_systemd;
 
 // Struct to hold application state
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -30,15 +31,23 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(conn: Connection, config_dir: String) -> Self {
-        let mut state = AppState {
-            repos: Arc::new(Mutex::new(HashMap::new())),
-            scm_internal: 60,
-            db_conn: Some(Arc::new(Mutex::new(conn))),
-        };
-        state.add_repos_from_config();
-        state.process_arguments(config_dir.as_str());
-        state
+    pub fn new() -> Self {
+        if let Some(config_dir) = default_config_path() {
+            if let Ok(c) = SqliteConnection::new() {
+                let mut state = AppState {
+                    repos: Arc::new(Mutex::new(HashMap::new())),
+                    scm_internal: 60,
+                    db_conn: Some(Arc::new(Mutex::new(c.conn))),
+                };
+                state.add_repos_from_config();
+                state.process_arguments(config_dir.as_str());
+                state
+            } else {
+                panic!("Failed to connect to SQLite database");
+            }
+        } else {
+            panic!("unable to find config path");
+        }
     }
 
     pub fn process_arguments(&mut self, config_dir: &str) {
@@ -51,9 +60,9 @@ impl AppState {
         match arguments.command {
             None => {}
             Some(Command::Add {
-                     path: Some(repo_path),
-                     branch: Some(branch_name),
-                 }) => {
+                path: Some(repo_path),
+                branch: Some(branch_name),
+            }) => {
                 if branch_name.len() == 0 {
                     println!("Branch name is empty");
                     exit(1);
@@ -74,29 +83,29 @@ impl AppState {
                         branch_name,
                         false,
                     )
-                        .write_repo_to_config();
+                    .write_repo_to_config();
                     exit(0);
                 }
             }
 
             Some(Command::Add {
-                     path: Some(path),
-                     branch: None,
-                 }) => {
+                path: Some(path),
+                branch: None,
+            }) => {
                 println!("Missing branch name: {}", &path);
                 exit(1);
             }
             Some(Command::Add {
-                     path: None,
-                     branch: Some(branch),
-                 }) => {
+                path: None,
+                branch: Some(branch),
+            }) => {
                 println!("Missing repo path: {}", &branch);
                 exit(1);
             }
             Some(Command::Add {
-                     path: None,
-                     branch: None,
-                 }) => {
+                path: None,
+                branch: None,
+            }) => {
                 println!("Missing repo path");
                 exit(1);
             }
@@ -124,7 +133,6 @@ impl AppState {
             }
         }
     }
-
 
     pub fn save_state(&self) {
         save_state(self.get_serialized_state());

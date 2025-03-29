@@ -98,7 +98,10 @@ impl Repo {
     }
 
     pub fn check_repo_changes(&mut self) {
-        println!("Checking repo changes... \n {}:{}", &self.path, &self.target_branch);
+        println!(
+            "Checking repo changes... \n {}:{}",
+            &self.path, &self.target_branch
+        );
         if let Some(latest_sha) = self.fetch_latest_sha() {
             // check sqlite
             // last sha

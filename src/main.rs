@@ -14,12 +14,6 @@ use crate::util::default_config_path;
 #[tokio::main]
 async fn main() {
     logging::init();
-    if let Some(config_dir) = default_config_path() {
-        if let Ok(c) = SqliteConnection::new() {
-            let mut state = AppState::new(c.conn, config_dir.clone());
-            state.poll_repos().await;
-        }
-    } else {
-        panic!("No config file specified");
-    }
+    let mut state = AppState::new();
+    state.poll_repos().await;
 }

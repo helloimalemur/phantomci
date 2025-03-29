@@ -1,7 +1,7 @@
+use crate::util::default_config_path;
 use anyhow::Error;
 use rusqlite::{params, Connection};
 use std::path::Path;
-use crate::util::default_config_path;
 
 #[derive(Debug, Clone)]
 pub struct Job {
@@ -63,7 +63,6 @@ impl SqliteConnection {
         Ok(SqliteConnection { conn })
     }
 
-
     pub fn setup_schema(&mut self) -> Result<(), anyhow::Error> {
         if let Err(e) = self.conn.execute(
             "CREATE TABLE IF NOT EXISTS jobs (
@@ -102,14 +101,12 @@ impl SqliteConnection {
 
         Ok(())
     }
-
 }
 
 fn load_env_variables(path: &str) -> rusqlite::Result<(), dotenv::Error> {
     let env_path = format!("{}.env", path);
     dotenv::from_path(Path::new(&env_path)).map(|_| println!("env: {}", env_path))
 }
-
 
 #[cfg(test)]
 mod tests {
