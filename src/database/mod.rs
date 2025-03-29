@@ -15,6 +15,7 @@ enum JobColumn {
     FinishTime,
     ErrorMessage,
     Result,
+    Sha
 }
 
 #[derive(Debug, Clone)]
@@ -29,6 +30,7 @@ pub struct Job {
     pub finish_time: String,
     pub error_message: String,
     pub result: String,
+    pub sha: String
 }
 
 impl Job {
@@ -37,8 +39,8 @@ impl Job {
         let conn = connection.unwrap().conn;
 
         match conn.execute(
-            "INSERT INTO jobs (repo, status, priority, created_at, updated_at, start_time, finish_time, error_message, result) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-            params![self.repo, self.status, self.priority, self.created_at, self.updated_at, self.start_time, self.finish_time, self.error_message, self.result],
+            "INSERT INTO jobs (repo, status, priority, created_at, updated_at, start_time, finish_time, error_message, result, sha) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            params![self.repo, self.status, self.priority, self.created_at, self.updated_at, self.start_time, self.finish_time, self.error_message, self.result, self.sha],
         ) {
             Ok(_) => (
                 println!("success")
@@ -71,6 +73,7 @@ impl Job {
                         finish_time: row.get(7)?,
                         error_message: row.get(8)?,
                         result: row.get(9)?,
+                        sha: row.get(10)?,
                     })
                 });
 
@@ -110,6 +113,7 @@ impl Job {
                         finish_time: row.get(7)?,
                         error_message: row.get(8)?,
                         result: row.get(9)?,
+                        sha: row.get(10)?,
                     })
                 });
 
@@ -151,6 +155,7 @@ impl Job {
                         finish_time: row.get(7)?,
                         error_message: row.get(8)?,
                         result: row.get(9)?,
+                        sha: row.get(10)?,
                     })
                 });
 
@@ -236,7 +241,8 @@ impl SqliteConnection {
             start_time DATETIME,                 -- When the job execution started
             finish_time DATETIME,                -- When the job execution ended
             error_message TEXT,                  -- Error message if the job failed
-            result TEXT                        -- Any result output or summary from the job execution
+            result TEXT,                        -- Any result output or summary from the job execution
+            sha TEXT                        -- Any result output or summary from the job execution
         )",
             (),
         ) {
@@ -291,6 +297,7 @@ mod tests {
             finish_time: "".to_string(),
             error_message: "".to_string(),
             result: "".to_string(),
+            sha: "".to_string(),
         };
 
         job.write();

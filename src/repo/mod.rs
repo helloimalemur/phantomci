@@ -10,6 +10,7 @@ use std::io::{BufRead, Write};
 use std::path::Path;
 use std::process::{exit, Command};
 use std::{env, fs};
+use crate::database::Job;
 
 // Struct to represent a repository
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
@@ -104,8 +105,10 @@ impl Repo {
         );
         if let Some(latest_sha) = self.fetch_latest_sha() {
             // check sqlite
+            // self.last_sha = self.get_sha_by_repo();
             // last sha
             if self.last_sha.as_ref() != Some(&latest_sha) {
+                // self.set_sha_by_repo(&latest_sha);
                 println!("========================================================");
                 println!("{}", Local::now().format("%Y-%m-%d %H:%M:%S"));
                 println!(
@@ -276,6 +279,19 @@ impl Repo {
         }
 
         head_branch
+    }
+
+    fn get_sha_by_repo(&self) {
+        let repo = String::from(&self.path);
+        let jobs = Job::get_jobs_by_repo(repo);
+        let mut sha = String::new();
+        for job in jobs {
+            sha = job.sha;
+        }
+    }
+
+    fn set_sha_by_repo(&self, latest_sha: String) {
+        todo!()
     }
 }
 

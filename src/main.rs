@@ -8,8 +8,6 @@ pub mod util;
 pub mod webhook;
 
 use crate::app::state::AppState;
-use crate::database::SqliteConnection;
-use crate::util::default_config_path;
 
 #[tokio::main]
 async fn main() {
