@@ -3,6 +3,19 @@ use anyhow::Error;
 use rusqlite::{params, Connection};
 use std::path::Path;
 
+enum JobColumn {
+    Id,
+    Description,
+    Status,
+    Priority,
+    CreatedAt,
+    UpdatedAt,
+    StartTime,
+    FinishTime,
+    ErrorMessage,
+    Result,
+}
+
 #[derive(Debug, Clone)]
 pub struct Job {
     pub id: i32,
@@ -34,6 +47,25 @@ impl Job {
             }
         }
     }
+
+    // fn read_by(job_column: JobColumn, column_value: String) -> Job {
+    //     match job_column {
+    //         JobColumn::Id => {}
+    //         JobColumn::Description => {}
+    //         JobColumn::Status => {}
+    //         JobColumn::Priority => {}
+    //         JobColumn::CreatedAt => {}
+    //         JobColumn::UpdatedAt => {}
+    //         JobColumn::StartTime => {}
+    //         JobColumn::FinishTime => {}
+    //         JobColumn::ErrorMessage => {}
+    //         JobColumn::Result => {}
+    //     }
+    // }
+
+    // fn fetch_latest_sha(&self) -> Option<String> {
+    //
+    // }
 }
 
 #[derive(Debug, Clone)]
