@@ -6,7 +6,7 @@ use rusqlite::fallible_iterator::FallibleIterator;
 
 enum JobColumn {
     Id,
-    Description,
+    Repo,
     Status,
     Priority,
     CreatedAt,
@@ -20,7 +20,7 @@ enum JobColumn {
 #[derive(Debug, Clone)]
 pub struct Job {
     pub id: i32,
-    pub description: String,
+    pub repo: String,
     pub status: String,
     pub priority: i32,
     pub created_at: String,
@@ -37,8 +37,8 @@ impl Job {
         let conn = connection.unwrap().conn;
 
         match conn.execute(
-            "INSERT INTO jobs (description, status, priority, created_at, updated_at, start_time, finish_time, error_message, result) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-            params![self.description, self.status, self.priority, self.created_at, self.updated_at, self.start_time, self.finish_time, self.error_message, self.result],
+            "INSERT INTO jobs (repo, status, priority, created_at, updated_at, start_time, finish_time, error_message, result) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            params![self.repo, self.status, self.priority, self.created_at, self.updated_at, self.start_time, self.finish_time, self.error_message, self.result],
         ) {
             Ok(_) => (
                 println!("success")
@@ -62,7 +62,7 @@ impl Job {
                 let job_iter = stmt.query_map([], |row| {
                     Ok(Job {
                         id: row.get(0)?,
-                        description: row.get(1)?,
+                        repo: row.get(1)?,
                         status: row.get(2)?,
                         priority: row.get(3)?,
                         created_at: row.get(4)?,
@@ -101,7 +101,48 @@ impl Job {
                 let job_iter = stmt.query_map([], |row| {
                     Ok(Job {
                         id: row.get(0)?,
-                        description: row.get(1)?,
+                        repo: row.get(1)?,
+                        status: row.get(2)?,
+                        priority: row.get(3)?,
+                        created_at: row.get(4)?,
+                        updated_at: row.get(5)?,
+                        start_time: row.get(6)?,
+                        finish_time: row.get(7)?,
+                        error_message: row.get(8)?,
+                        result: row.get(9)?,
+                    })
+                });
+
+                if let Ok(job_iter) = job_iter {
+                    for job in job_iter {
+                        if let Ok(job) = job {
+                            if job.status == status {
+                                jobs.push(job);
+                            }
+                        }
+                    }
+                }
+            }
+
+            jobs
+        } else {
+            eprintln!("Error: unable to run query");
+            vec![]
+        }
+    }
+
+    pub fn get_jobs_by_repo(status: String) -> Vec<Job> {
+        if let Ok(sql) = SqliteConnection::new() {
+            let mut jobs: Vec<Job> = vec![];
+            let res = sql.conn.prepare(
+                "SELECT * FROM jobs",
+            );
+
+            if let Ok(mut stmt) = sql.conn.prepare("SELECT * FROM jobs") {
+                let job_iter = stmt.query_map([], |row| {
+                    Ok(Job {
+                        id: row.get(0)?,
+                        repo: row.get(1)?,
                         status: row.get(2)?,
                         priority: row.get(3)?,
                         created_at: row.get(4)?,
@@ -169,20 +210,25 @@ impl SqliteConnection {
             if let Err(e) = load_env_variables(&sqlite_path) {
                 eprintln!("environment variables not loaded: {}", e);
             }
-
             Connection::open(sqlite_path)?
         } else {
             panic!("unable to connect to database")
         };
 
-        Ok(SqliteConnection { conn })
+        let mut sqlite = SqliteConnection { conn };
+
+        if let Err(e) = sqlite.setup_schema() {
+            eprintln!("failed to setup schema: {}", e);
+        }
+
+        Ok(sqlite)
     }
 
     pub fn setup_schema(&mut self) -> Result<(), anyhow::Error> {
         if let Err(e) = self.conn.execute(
             "CREATE TABLE IF NOT EXISTS jobs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            description TEXT NOT NULL,           -- Description of the job (e.g., build commands, target project)
+            repo TEXT NOT NULL,           -- Repo of the job (target project)
             status TEXT NOT NULL,                -- Job status: 'pending', 'running', 'success', 'failed'
             priority INTEGER DEFAULT 0,          -- Optional priority field for scheduling decisions
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,  -- When the job was created
@@ -236,7 +282,7 @@ mod tests {
 
         let mut job = Job {
             id: 0,
-            description: "".to_string(),
+            repo: "".to_string(),
             status: "running".to_string(),
             priority: 0,
             created_at: "".to_string(),
