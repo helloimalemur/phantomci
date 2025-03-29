@@ -23,7 +23,7 @@ impl Job {
         let conn = connection.unwrap().conn;
 
         match conn.execute(
-            "INSERT INTO job (description, status, created_at, updated_at, start_time, finish_time, error, result) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            "INSERT INTO jobs (description, status, priority, created_at, updated_at, start_time, finish_time, error_message, result) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
             params![self.description, self.status, self.priority, self.created_at, self.updated_at, self.start_time, self.finish_time, self.error_message, self.result],
         ) {
             Ok(_) => (
@@ -51,8 +51,6 @@ pub struct SqliteConnection {
 impl SqliteConnection {
     pub fn new() -> Result<SqliteConnection, Error> {
         let config_dir = default_config_path().unwrap();
-
-        let sqlite_path = format!("{}/{}", config_dir, "db.sqlite");
 
         if let Err(e) = load_env_variables(&config_dir) {
             eprintln!("environment variables not loaded: {}", e);
@@ -111,9 +109,14 @@ fn load_env_variables(path: &str) -> rusqlite::Result<(), dotenv::Error> {
 #[cfg(test)]
 mod tests {
     use crate::database::Job;
+    use crate::util::default_config_path;
 
     #[test]
     fn test_insert() {
+        let config_dir = default_config_path().unwrap();
+        let sqlite_path = format!("{}{}", config_dir, "db.sqlite");
+        println!("SQLite database path: {}", sqlite_path);
+
         let mut job = Job {
             id: 0,
             description: "".to_string(),

@@ -140,6 +140,16 @@ pub fn default_repo_work_path_delete(repo_name: String) -> Option<String> {
     }
 }
 
+pub fn default_sqlite_path() -> Result<String, anyhow::Error> {
+    if let Some(cp) = default_config_path() {
+        let sqlite_path = format!("{}{}", cp, "db.sqlite");
+        Ok(sqlite_path)
+    } else {
+        anyhow::bail!("unable to determine sqlite path")
+    }
+}
+
+
 pub fn default_config_path() -> Option<String> {
     if let Ok(cur_user) = whoami::username() {
         Some(match OS {
