@@ -254,5 +254,8 @@ mod tests {
     fn test_read_by_status() {
         let jobs = Job::get_jobs_by_status("running".to_string());
         println!("{:?}", jobs);
+        for job in jobs {
+            assert_eq!(job.status, "running");
+        }
     }
 }
