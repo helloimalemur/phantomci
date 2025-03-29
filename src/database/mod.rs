@@ -1,4 +1,4 @@
-use crate::util::default_config_path;
+use crate::util::{default_config_path, default_sqlite_path};
 use anyhow::Error;
 use rusqlite::{params, Connection};
 use std::path::Path;
@@ -50,12 +50,12 @@ pub struct SqliteConnection {
 
 impl SqliteConnection {
     pub fn new() -> Result<SqliteConnection, Error> {
-        let conn = if let Some(config_dir) = default_config_path() {
-            if let Err(e) = load_env_variables(&config_dir) {
+        let conn = if let Ok(sqlite_path) = default_sqlite_path() {
+            if let Err(e) = load_env_variables(&sqlite_path) {
                 eprintln!("environment variables not loaded: {}", e);
             }
 
-            Connection::open(config_dir)?
+            Connection::open(sqlite_path)?
         } else {
             panic!("unable to connect to database")
         };
