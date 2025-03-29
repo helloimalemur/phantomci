@@ -50,13 +50,15 @@ pub struct SqliteConnection {
 
 impl SqliteConnection {
     pub fn new() -> Result<SqliteConnection, Error> {
-        let config_dir = default_config_path().unwrap();
+        let conn = if let Some(config_dir) = default_config_path() {
+            if let Err(e) = load_env_variables(&config_dir) {
+                eprintln!("environment variables not loaded: {}", e);
+            }
 
-        if let Err(e) = load_env_variables(&config_dir) {
-            eprintln!("environment variables not loaded: {}", e);
-        }
-
-        let conn = Connection::open(sqlite_path)?;
+            Connection::open(config_dir)?
+        } else {
+            panic!("unable to connect to database")
+        };
 
         Ok(SqliteConnection { conn })
     }

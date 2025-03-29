@@ -149,7 +149,6 @@ pub fn default_sqlite_path() -> Result<String, anyhow::Error> {
     }
 }
 
-
 pub fn default_config_path() -> Option<String> {
     if let Ok(cur_user) = whoami::username() {
         Some(match OS {
