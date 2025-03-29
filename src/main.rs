@@ -8,15 +8,15 @@ pub mod util;
 pub mod webhook;
 
 use crate::app::state::AppState;
-use crate::database::create_connection;
+use crate::database::SqliteConnection;
 use crate::util::default_config_path;
 
 #[tokio::main]
 async fn main() {
     logging::init();
     if let Some(config_dir) = default_config_path() {
-        if let Ok(conn) = create_connection(config_dir.clone()) {
-            let mut state = AppState::new(conn, config_dir.clone());
+        if let Ok(c) = SqliteConnection::new() {
+            let mut state = AppState::new(c.conn, config_dir.clone());
             state.poll_repos().await;
         }
     } else {

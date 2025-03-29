@@ -1,6 +1,7 @@
 use anyhow::Error;
-use rusqlite::Connection;
+use rusqlite::{params, Connection};
 use std::path::Path;
+use crate::util::default_config_path;
 
 #[derive(Debug, Clone)]
 pub struct Job {
@@ -16,6 +17,25 @@ pub struct Job {
     pub result: String,
 }
 
+impl Job {
+    fn write(&mut self) {
+        let connection = SqliteConnection::new();
+        let conn = connection.unwrap().conn;
+
+        match conn.execute(
+            "INSERT INTO job (description, status, created_at, updated_at, start_time, finish_time, error, result) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            params![self.description, self.status, self.priority, self.created_at, self.updated_at, self.start_time, self.finish_time, self.error_message, self.result],
+        ) {
+            Ok(_) => (
+                println!("success")
+                ),
+            Err(error) => {
+                println!("{}", error)
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct JobLog {
     pub id: i32,
@@ -24,31 +44,29 @@ pub struct JobLog {
     pub logged_at: String,
 }
 
-fn load_env_variables(path: &str) -> rusqlite::Result<(), dotenv::Error> {
-    let env_path = format!("{}.env", path);
-    dotenv::from_path(Path::new(&env_path)).map(|_| println!("env: {}", env_path))
+pub struct SqliteConnection {
+    pub conn: Connection,
 }
 
-pub fn create_connection(config_dir: String) -> Result<Connection, Error> {
-    let sqlite_path = format!("{}/{}", config_dir, "db.sqlite");
+impl SqliteConnection {
+    pub fn new() -> Result<SqliteConnection, Error> {
+        let config_dir = default_config_path().unwrap();
 
-    if let Err(e) = load_env_variables(&config_dir) {
-        eprintln!("environment variables not loaded: {}", e);
-    }
+        let sqlite_path = format!("{}/{}", config_dir, "db.sqlite");
 
-    if let Ok(conn) = Connection::open(&sqlite_path) {
-        if let Err(e) = setup_schema(&conn) {
-            eprintln!("Failed to setup schema: {:?}", e);
+        if let Err(e) = load_env_variables(&config_dir) {
+            eprintln!("environment variables not loaded: {}", e);
         }
-        Ok(conn)
-    } else {
-        anyhow::bail!("Failed to connect to database");
-    }
-}
 
-pub fn setup_schema(db: &Connection) -> Result<(), anyhow::Error> {
-    if let Err(e) = db.execute(
-        "CREATE TABLE IF NOT EXISTS jobs (
+        let conn = Connection::open(sqlite_path)?;
+
+        Ok(SqliteConnection { conn })
+    }
+
+
+    pub fn setup_schema(&mut self) -> Result<(), anyhow::Error> {
+        if let Err(e) = self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS jobs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             description TEXT NOT NULL,           -- Description of the job (e.g., build commands, target project)
             status TEXT NOT NULL,                -- Job status: 'pending', 'running', 'success', 'failed'
@@ -60,27 +78,58 @@ pub fn setup_schema(db: &Connection) -> Result<(), anyhow::Error> {
             error_message TEXT,                  -- Error message if the job failed
             result TEXT                        -- Any result output or summary from the job execution
         )",
-        (),
-    ) {
-        eprintln!("Error: {}", e);
-    } else {
-        println!("Table Created: jobs");
-    }
+            (),
+        ) {
+            eprintln!("Error: {}", e);
+        } else {
+            println!("Table Created: jobs");
+        }
 
-    if let Err(e) = db.execute(
-        "CREATE TABLE IF NOT EXISTS job_logs (
+        if let Err(e) = self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS job_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             job_id INTEGER NOT NULL,             -- Foreign key reference to the jobs table
             log_message TEXT NOT NULL,           -- Log message content
             logged_at DATETIME DEFAULT CURRENT_TIMESTAMP,  -- When this log was recorded
             FOREIGN KEY(job_id) REFERENCES jobs(id) ON DELETE CASCADE
         )",
-        (),
-    ) {
-        eprintln!("Error: {}", e);
-    } else {
-        println!("Table Created: job_logs");
+            (),
+        ) {
+            eprintln!("Error: {}", e);
+        } else {
+            println!("Table Created: job_logs");
+        }
+
+        Ok(())
     }
 
-    Ok(())
+}
+
+fn load_env_variables(path: &str) -> rusqlite::Result<(), dotenv::Error> {
+    let env_path = format!("{}.env", path);
+    dotenv::from_path(Path::new(&env_path)).map(|_| println!("env: {}", env_path))
+}
+
+
+#[cfg(test)]
+mod tests {
+    use crate::database::Job;
+
+    #[test]
+    fn test_insert() {
+        let mut job = Job {
+            id: 0,
+            description: "".to_string(),
+            status: "".to_string(),
+            priority: 0,
+            created_at: "".to_string(),
+            updated_at: "".to_string(),
+            start_time: "".to_string(),
+            finish_time: "".to_string(),
+            error_message: "".to_string(),
+            result: "".to_string(),
+        };
+
+        job.write();
+    }
 }
