@@ -1,7 +1,8 @@
-use crate::util::{default_config_path, default_sqlite_path};
+use crate::util::default_sqlite_path;
 use anyhow::Error;
 use rusqlite::{params, Connection};
 use std::path::Path;
+use rusqlite::fallible_iterator::FallibleIterator;
 
 enum JobColumn {
     Id,
@@ -31,7 +32,7 @@ pub struct Job {
 }
 
 impl Job {
-    fn write(&mut self) {
+    pub fn write(&mut self) {
         let connection = SqliteConnection::new();
         let conn = connection.unwrap().conn;
 
@@ -45,6 +46,88 @@ impl Job {
             Err(error) => {
                 println!("{}", error)
             }
+        }
+    }
+
+    // pub fn read_by_date_range() -> Vec<Job> {}
+    // pub fn read_by_id_range() -> Vec<Job> {}
+    pub fn get_jobs() -> Vec<Job> {
+        if let Ok(sql) = SqliteConnection::new() {
+            let mut jobs: Vec<Job> = vec![];
+            let res = sql.conn.prepare(
+                "SELECT * FROM jobs",
+            );
+
+            if let Ok(mut stmt) = sql.conn.prepare("SELECT * FROM jobs") {
+                let job_iter = stmt.query_map([], |row| {
+                    Ok(Job {
+                        id: row.get(0)?,
+                        description: row.get(1)?,
+                        status: row.get(2)?,
+                        priority: row.get(3)?,
+                        created_at: row.get(4)?,
+                        updated_at: row.get(5)?,
+                        start_time: row.get(6)?,
+                        finish_time: row.get(7)?,
+                        error_message: row.get(8)?,
+                        result: row.get(9)?,
+                    })
+                });
+
+                if let Ok(job_iter) = job_iter {
+                    for job in job_iter {
+                        if let Ok(job) = job {
+                            jobs.push(job);
+                        }
+                    }
+                }
+            }
+
+            jobs
+        } else {
+            eprintln!("Error: unable to run query");
+            vec![]
+        }
+    }
+
+    pub fn get_jobs_by_status(status: String) -> Vec<Job> {
+        if let Ok(sql) = SqliteConnection::new() {
+            let mut jobs: Vec<Job> = vec![];
+            let res = sql.conn.prepare(
+                "SELECT * FROM jobs",
+            );
+
+            if let Ok(mut stmt) = sql.conn.prepare("SELECT * FROM jobs") {
+                let job_iter = stmt.query_map([], |row| {
+                    Ok(Job {
+                        id: row.get(0)?,
+                        description: row.get(1)?,
+                        status: row.get(2)?,
+                        priority: row.get(3)?,
+                        created_at: row.get(4)?,
+                        updated_at: row.get(5)?,
+                        start_time: row.get(6)?,
+                        finish_time: row.get(7)?,
+                        error_message: row.get(8)?,
+                        result: row.get(9)?,
+                    })
+                });
+
+                if let Ok(job_iter) = job_iter {
+                    for job in job_iter {
+                        if let Ok(job) = job {
+                            if job.status == status {
+                                jobs.push(job);
+                            }
+                        }
+                    }
+                }
+            }
+
+            jobs
+        } else {
+            eprintln!("Error: unable to run query");
+            vec![]
         }
     }
 
@@ -154,7 +237,7 @@ mod tests {
         let mut job = Job {
             id: 0,
             description: "".to_string(),
-            status: "".to_string(),
+            status: "running".to_string(),
             priority: 0,
             created_at: "".to_string(),
             updated_at: "".to_string(),
@@ -165,5 +248,11 @@ mod tests {
         };
 
         job.write();
+    }
+
+    #[test]
+    fn test_read_by_status() {
+        let jobs = Job::get_jobs_by_status("running".to_string());
+        println!("{:?}", jobs);
     }
 }
