@@ -1244,7 +1244,7 @@ dependencies = [
 
 [[package]]
 name = "phantom_ci"
-version = "0.1.222"
+version = "0.1.3"
 dependencies = [
  "anyhow",
  "chrono",
