@@ -11,6 +11,7 @@ use std::io::{BufRead, Write};
 use std::path::Path;
 use std::process::{exit, Command};
 use std::{env, fs};
+use tokio::sync::mpsc::Sender;
 
 // Struct to represent a repository
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
@@ -134,7 +135,6 @@ impl Repo {
                 );
 
                 self.last_sha = Some(latest_sha.to_owned());
-                // write sha
 
                 self.triggered = true;
 
@@ -146,10 +146,9 @@ impl Repo {
     }
 
     // Check for changes in a repository and handle them
-    pub async fn check_repo_triggered(&mut self) {
+    pub async fn check_repo_triggered(&mut self, tx_clone: Sender<String>) {
         if self.triggered {
             // Parse workflow file
-            // let workflow_path = Path::new(&repo.path).join(&repo.workflow_file);
             self.triggered = false;
             let wp = format!(
                 "{}/workflow/{}.toml",
@@ -158,7 +157,7 @@ impl Repo {
             );
             let workflow_path = Path::new(&wp);
             if workflow_path.exists() {
-                parse_workflow(workflow_path.to_str().unwrap(), self.to_owned()).await;
+                parse_workflow(workflow_path.to_str().unwrap(), self.to_owned(), tx_clone).await;
             } else {
                 eprintln!(
                     "Workflow file not found at {}",

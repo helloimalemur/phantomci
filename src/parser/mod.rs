@@ -4,10 +4,10 @@ use chrono::Local;
 use config::Config;
 use std::collections::{BTreeMap, HashMap};
 use std::process;
+use tokio::sync::mpsc::Sender;
 use whoami::hostname;
 
-// Parse the workflow file
-pub async fn parse_workflow(file_path: &str, repo: Repo) {
+pub async fn parse_workflow(file_path: &str, repo: Repo, tx_clone: Sender<String>) {
     let starting_message = format!(
         "Starting Workflow: {}\nTarget Branch: {}\nHost: {}",
         repo.path,
@@ -22,22 +22,18 @@ pub async fn parse_workflow(file_path: &str, repo: Repo) {
     for i in commands {
         map.insert(i.0.parse::<usize>().unwrap(), i.1.to_owned());
     }
-    // use btreemap to sort commands
+
     for e in map.iter() {
-        run_command(repo.to_owned(), e.1.to_owned()).await
+        run_command(repo.to_owned(), e.1.to_owned(), tx_clone.clone()).await
     }
 
     println!("========================================================");
     println!("========================================================");
 }
 
-async fn run_command(repo: Repo, command: WorkflowCommand) {
+async fn run_command(repo: Repo, command: WorkflowCommand, tx_clone: Sender<String>) {
     let cmd = command.clone();
-    // let mut output = String::new();
 
-    // let (tx, mut rx) = tokio::sync::mpsc::channel::<String>(100);
-
-    // let mut tx_clone = tx.clone();
     tokio::spawn(async move {
         let mut output = String::new();
         let root = cmd.run.split(' ').collect::<Vec<&str>>();
@@ -58,10 +54,7 @@ async fn run_command(repo: Repo, command: WorkflowCommand) {
                 output = String::from_utf8_lossy(&a.stdout).to_string();
             }
         }
-        // tx_clone.send(output).await.unwrap();
 
-
-        // println!("Job Output:\n{}", &output);
         let mut log = JobLog {
             id: 0,
             repo: repo.path.clone(),
@@ -69,14 +62,9 @@ async fn run_command(repo: Repo, command: WorkflowCommand) {
             logged_at: Local::now().to_rfc3339(),
         };
         log.add_job_log();
+        tx_clone.send(output.clone()).await.unwrap();
         repo.send_webhook(output.to_string(), &repo).await // troubleshooting
     });
-    // drop(tx);
-
-    // let mut message = String::new();
-    // while let Some(msg) = rx.recv().await {
-    //     message += &msg;
-    // }
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]

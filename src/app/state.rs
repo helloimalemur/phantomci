@@ -228,16 +228,25 @@ impl AppState {
         let interval_duration = Duration::new(self.scm_internal.clone(), 0);
         let mut ticker = interval(interval_duration);
 
+        let (mut tx, mut rx) = tokio::sync::mpsc::channel::<String>(100);
+
         loop {
+            let mut tx_clone = tx.clone();
+
             ticker.tick().await;
             let mut repos = self.repos.lock().unwrap().to_owned();
             for (_, repo) in repos.iter_mut() {
                 repo.check_repo_changes();
-                repo.check_repo_triggered().await
+                repo.check_repo_triggered(tx_clone.clone()).await
             }
             self.repos.lock().unwrap().clone_from(&repos);
             // state.add_repos_from_config();
             // state.save_state();
+
+            while let Some(message) = rx.recv().await {
+                println!("Received: {}", message);
+            }
+
         }
     }
 }
