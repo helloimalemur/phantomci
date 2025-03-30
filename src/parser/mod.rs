@@ -32,33 +32,51 @@ pub async fn parse_workflow(file_path: &str, repo: Repo) {
 }
 
 async fn run_command(repo: Repo, command: WorkflowCommand) {
-    let root = command.run.split(' ').collect::<Vec<&str>>();
-    let args = root[1..].to_vec();
-    println!(
-        "Running on {}:\n{}",
-        hostname().unwrap_or_default(),
-        command.run
-    );
-    if let Ok(o) = process::Command::new(root[0])
-        .args(args)
-        .current_dir(&repo.work_dir)
-        .stdout(process::Stdio::piped())
-        .stderr(process::Stdio::piped())
-        .spawn()
-    {
-        if let Ok(a) = o.wait_with_output() {
-            let output = String::from_utf8_lossy(&a.stdout);
-            println!("Job Output:\n{}", &output);
-            let mut log = JobLog {
-                id: 0,
-                repo: repo.path.clone(),
-                log_message: output.to_string(),
-                logged_at: Local::now().to_rfc3339(),
-            };
-            log.add_job_log();
-            repo.send_webhook(output.to_string(), &repo).await // troubleshooting
+    let cmd = command.clone();
+    // let mut output = String::new();
+
+    // let (tx, mut rx) = tokio::sync::mpsc::channel::<String>(100);
+
+    // let mut tx_clone = tx.clone();
+    tokio::spawn(async move {
+        let mut output = String::new();
+        let root = cmd.run.split(' ').collect::<Vec<&str>>();
+        let args = root[1..].to_vec();
+        println!(
+            "Running on {}:\n{}",
+            hostname().unwrap_or_default(),
+            command.run
+        );
+        if let Ok(o) = process::Command::new(root[0])
+            .args(args)
+            .current_dir(&repo.work_dir)
+            .stdout(process::Stdio::piped())
+            .stderr(process::Stdio::piped())
+            .spawn()
+        {
+            if let Ok(a) = o.wait_with_output() {
+                output = String::from_utf8_lossy(&a.stdout).to_string();
+            }
         }
-    }
+        // tx_clone.send(output).await.unwrap();
+
+
+        // println!("Job Output:\n{}", &output);
+        let mut log = JobLog {
+            id: 0,
+            repo: repo.path.clone(),
+            log_message: output.to_string(),
+            logged_at: Local::now().to_rfc3339(),
+        };
+        log.add_job_log();
+        repo.send_webhook(output.to_string(), &repo).await // troubleshooting
+    });
+    // drop(tx);
+
+    // let mut message = String::new();
+    // while let Some(msg) = rx.recv().await {
+    //     message += &msg;
+    // }
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
