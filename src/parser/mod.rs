@@ -48,7 +48,7 @@ async fn run_command(repo: Repo, command: WorkflowCommand) {
     {
         if let Ok(a) = o.wait_with_output() {
             let output = String::from_utf8_lossy(&a.stdout);
-            println!("Job Output:\n{}", &output.replace("\n", "\\n"));
+            println!("Job Output:\n{}", &output);
             let mut log = JobLog {
                 id: 0,
                 repo: repo.path.clone(),
