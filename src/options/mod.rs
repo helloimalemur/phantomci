@@ -22,5 +22,5 @@ pub enum Command {
         sub: String,
     },
     List,
-    Reload,
+    Reset,
 }

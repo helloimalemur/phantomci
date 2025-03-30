@@ -120,7 +120,7 @@ impl AppState {
                     exit(1);
                 }
             },
-            Some(Command::Reload) => {
+            Some(Command::Reset) => {
                 default_repo_work_path_remove_cache_data();
             }
             Some(Command::List) => {
