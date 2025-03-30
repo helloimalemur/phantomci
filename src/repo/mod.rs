@@ -117,7 +117,7 @@ impl Repo {
 
     pub fn check_repo_changes(&mut self) {
         println!(
-            "Checking repo changes... \n {}:{}",
+            "Checking changes... \n        {}:{}",
             &self.path, &self.target_branch
         );
         if let Some(latest_sha) = self.git_latest_sha() {
