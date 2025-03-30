@@ -38,11 +38,11 @@ impl Job {
         let connection = SqliteConnection::new();
         let conn = connection.unwrap().conn;
 
-        match Job::check_exists(String::from(self.clone().repo)) {
+        match Job::check_exists(String::from(self.clone().repo), String::from(self.clone().target_branch)) {
             false => {
                 match conn.execute(
-                    "INSERT INTO jobs (repo, status, priority, created_at, updated_at, start_time, finish_time, error_message, result, sha) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
-                    params![self.repo, self.status, self.priority, self.created_at, self.updated_at, self.start_time, self.finish_time, self.error_message, self.result, self.sha],
+                    "INSERT INTO jobs (repo, status, priority, created_at, updated_at, start_time, finish_time, error_message, result, sha, target_branch) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+                    params![self.repo, self.status, self.priority, self.created_at, self.updated_at, self.start_time, self.finish_time, self.error_message, self.result, self.sha, self.target_branch],
                 ) {
                     Ok(_) => (
                         println!("Added successfully")
@@ -56,26 +56,24 @@ impl Job {
         }
     }
 
-    pub fn check_exists(repo: String) -> bool {
+    pub fn check_exists(repo: String, branch: String) -> bool {
         let mut contained = false;
         let jobs = Job::get_jobs();
         for job in jobs {
-            if job.repo == repo {
+            if job.repo == repo && job.target_branch == branch {
                 contained = true;
             }
         }
         contained
     }
 
-    pub fn update_sha(repo: String, sha: String) {
+    pub fn update_sha(repo: String, target_branch: String, sha: String) {
         let connection = SqliteConnection::new();
         let conn = connection.unwrap().conn;
 
         match conn.execute(
-            "UPDATE jobs
-            SET sha = ?1
-            WHERE repo = ?2",
-            params![sha, repo],
+            "UPDATE jobs SET sha = ?1 WHERE repo = ?2 AND target_branch = ?3",
+            params![sha, repo, target_branch],
         ) {
             Ok(rows_updated) => {
                 if rows_updated > 0 {
