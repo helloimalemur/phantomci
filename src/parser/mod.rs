@@ -53,7 +53,7 @@ async fn run_command(repo: Repo, command: WorkflowCommand) {
                 log_message: output.to_string(),
                 logged_at: Local::now().to_rfc3339(),
             };
-            log.add_job_log();
+            log.add_job_log(output.to_string());
             repo.send_webhook(output.to_string(), &repo).await // troubleshooting
         }
     }
