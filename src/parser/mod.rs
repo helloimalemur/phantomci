@@ -51,7 +51,8 @@ async fn run_command(repo: Repo, command: WorkflowCommand, tx_clone: Sender<Stri
             .spawn()
         {
             if let Ok(a) = o.wait_with_output() {
-                output = String::from_utf8_lossy(&a.stdout).to_string();
+                let message = format!("{} :: {}", repo.name, String::from_utf8_lossy(&a.stderr));
+                output = message;
             }
         }
 
