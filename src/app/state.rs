@@ -17,6 +17,7 @@ use std::path::Path;
 use std::process::exit;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use tokio::sync::mpsc::error::TryRecvError;
 use tokio::time::interval;
 
 // Struct to hold application state
@@ -233,7 +234,7 @@ impl AppState {
 
         loop {
             let mut tx_clone = tx.clone();
-            let mut rx_clone = &mut rx;
+            // let mut rx_clone = &mut rx;
 
             ticker.tick().await;
             let mut repos = self.repos.lock().unwrap().to_owned();
@@ -243,10 +244,17 @@ impl AppState {
             }
             self.repos.lock().unwrap().clone_from(&repos);
 
-            // drop(tx_clone);
+            drop(tx_clone);
 
-            while let Some(message) = rx_clone.recv().await {
-                println!("Received: {}", message);
+            loop {
+                match rx.try_recv() {
+                    Ok(msg) => println!("Received: {}", msg),
+                    Err(TryRecvError::Empty) => break, // nothing left to read
+                    Err(TryRecvError::Disconnected) => {
+                        // println!("Channel closed.");
+                        break;
+                    }
+                }
             }
 
         }
