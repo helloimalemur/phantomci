@@ -72,7 +72,22 @@ impl Repo {
             self.get_default_branch();
         }
 
-        self.last_sha = self.fetch_latest_sha()
+        self.last_sha = self.git_latest_sha();
+
+        let mut job = Job {
+            id: 0,
+            repo: self.path.clone(),
+            status: "".to_string(),
+            priority: 0,
+            created_at: "".to_string(),
+            updated_at: "".to_string(),
+            start_time: "".to_string(),
+            finish_time: "".to_string(),
+            error_message: "".to_string(),
+            result: "".to_string(),
+            sha: String::from(self.clone().last_sha.unwrap_or_default()),
+        };
+        job.add_job();
     }
 
     pub async fn send_webhook(&self, message: String, repo: &Repo) {
@@ -103,7 +118,7 @@ impl Repo {
             "Checking repo changes... \n {}:{}",
             &self.path, &self.target_branch
         );
-        if let Some(latest_sha) = self.fetch_latest_sha() {
+        if let Some(latest_sha) = self.git_latest_sha() {
             // check sqlite
             self.last_sha = Some(self.get_sha_by_repo());
             // last sha
@@ -151,7 +166,7 @@ impl Repo {
         }
     }
 
-    pub fn fetch_latest_sha(&mut self) -> Option<String> {
+    pub fn git_latest_sha(&mut self) -> Option<String> {
         if let Err(e) = self.fetch_pull() {
             eprintln!("Error: {}", e)
         }

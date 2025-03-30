@@ -43,7 +43,7 @@ impl Job {
             params![self.repo, self.status, self.priority, self.created_at, self.updated_at, self.start_time, self.finish_time, self.error_message, self.result, self.sha],
         ) {
             Ok(_) => (
-                println!("success")
+                println!("Added successfully")
             ),
             Err(error) => {
                 println!("{}", error)
@@ -78,7 +78,7 @@ impl Job {
         ) {
             Ok(rows_updated) => {
                 if rows_updated > 0 {
-                    println!("Update successful");
+                    println!("SHA Update successful");
                 } else {
                     println!("No matching job to update");
                 }
