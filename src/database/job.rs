@@ -39,7 +39,7 @@ impl Job {
         let conn = connection.unwrap().conn;
 
         match Job::check_exists(String::from(self.clone().repo)) {
-            true => {
+            false => {
                 match conn.execute(
                     "INSERT INTO jobs (repo, status, priority, created_at, updated_at, start_time, finish_time, error_message, result, sha) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
                     params![self.repo, self.status, self.priority, self.created_at, self.updated_at, self.start_time, self.finish_time, self.error_message, self.result, self.sha],

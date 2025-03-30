@@ -122,7 +122,7 @@ impl Repo {
             // check sqlite
             self.last_sha = Some(self.get_sha_by_repo());
             // last sha
-            if self.last_sha.as_ref() != Some(&latest_sha) {
+            if self.last_sha.as_ref() != Some(&latest_sha) && (!self.clone().last_sha.unwrap().is_empty()) {
                 self.set_sha_by_repo(latest_sha.clone());
                 println!("========================================================");
                 println!("{}", Local::now().format("%Y-%m-%d %H:%M:%S"));
