@@ -11,21 +11,17 @@ pub struct JobLog {
 }
 
 impl JobLog {
-    pub fn add_job_log(&mut self, message: String) {
+    pub fn add_job_log(&mut self) {
 
         let connection = SqliteConnection::new();
         let conn = connection.unwrap().conn;
 
         match conn.execute(
             "INSERT INTO job_logs (repo, log_message, logged_at) values (?1, ?2, ?3)",
-            params![self.repo, message, Local::now().to_rfc3339()],
+            params![self.repo, self.log_message, Local::now().to_rfc3339()],
         ) {
-            Ok(_) => (
-                println!("success")
-            ),
-            Err(error) => {
-                println!("{}", error)
-            }
+            Ok(_) => println!("Wrote job log successfully"),
+            Err(error) => println!("{}", error)
         }
     }
 

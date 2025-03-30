@@ -42,18 +42,20 @@ async fn run_command(repo: Repo, command: WorkflowCommand) {
     if let Ok(o) = process::Command::new(root[0])
         .args(args)
         .current_dir(&repo.work_dir)
+        .stdout(process::Stdio::piped())
+        .stderr(process::Stdio::piped())
         .spawn()
     {
         if let Ok(a) = o.wait_with_output() {
             let output = String::from_utf8_lossy(&a.stdout);
-            println!("Job Output:\n{}", &output);
+            println!("Job Output:\n{}", &output.replace("\n", "\\n"));
             let mut log = JobLog {
                 id: 0,
                 repo: repo.path.clone(),
                 log_message: output.to_string(),
                 logged_at: Local::now().to_rfc3339(),
             };
-            log.add_job_log(output.to_string());
+            log.add_job_log();
             repo.send_webhook(output.to_string(), &repo).await // troubleshooting
         }
     }
