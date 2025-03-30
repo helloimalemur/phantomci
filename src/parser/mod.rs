@@ -51,19 +51,19 @@ async fn run_command(repo: Repo, command: WorkflowCommand, tx_clone: Sender<Stri
             .spawn()
         {
             if let Ok(a) = o.wait_with_output() {
-                let message = format!("{} :: {}", repo.name, String::from_utf8_lossy(&a.stderr));
-                output = message;
+                output = String::from_utf8_lossy(&a.stdout).to_string();
             }
         }
 
+        let message = format!("{} :: {}", repo.name, output.clone());
         let mut log = JobLog {
             id: 0,
             repo: repo.path.clone(),
-            log_message: output.to_string(),
+            log_message: message.clone(),
             logged_at: Local::now().to_rfc3339(),
         };
         log.add_job_log();
-        tx_clone.send(output.clone()).await.unwrap();
+        tx_clone.send(message.clone()).await.unwrap();
         repo.send_webhook(output.to_string(), &repo).await // troubleshooting
     });
 }
