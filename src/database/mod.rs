@@ -3,7 +3,7 @@ use rusqlite::Connection;
 use crate::util::default_sqlite_path;
 
 pub mod job;
-mod joblog;
+pub mod joblog;
 
 
 pub struct SqliteConnection {

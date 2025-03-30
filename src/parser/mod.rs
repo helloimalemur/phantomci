@@ -2,7 +2,9 @@ use crate::repo::Repo;
 use config::Config;
 use std::collections::{BTreeMap, HashMap};
 use std::process;
+use chrono::Local;
 use whoami::hostname;
+use crate::database::joblog::JobLog;
 
 // Parse the workflow file
 pub async fn parse_workflow(file_path: &str, repo: Repo) {
@@ -45,6 +47,13 @@ async fn run_command(repo: Repo, command: WorkflowCommand) {
         if let Ok(a) = o.wait_with_output() {
             let output = String::from_utf8_lossy(&a.stdout);
             println!("{}", &output);
+            let mut log = JobLog {
+                id: 0,
+                repo: repo.path.clone(),
+                log_message: output.to_string(),
+                logged_at: Local::now().to_rfc3339(),
+            };
+            log.add_job_log();
             repo.send_webhook(output.to_string(), &repo).await // troubleshooting
         }
     }
