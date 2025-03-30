@@ -256,7 +256,6 @@ impl AppState {
                     }
                 }
             }
-
         }
     }
 }
