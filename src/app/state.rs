@@ -12,6 +12,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::fs::OpenOptions;
 use std::io::Write;
+use std::ops::Deref;
 use std::path::Path;
 use std::process::exit;
 use std::sync::{Arc, Mutex};
@@ -232,6 +233,7 @@ impl AppState {
 
         loop {
             let mut tx_clone = tx.clone();
+            let mut rx_clone = &mut rx;
 
             ticker.tick().await;
             let mut repos = self.repos.lock().unwrap().to_owned();
@@ -240,10 +242,10 @@ impl AppState {
                 repo.check_repo_triggered(tx_clone.clone()).await
             }
             self.repos.lock().unwrap().clone_from(&repos);
-            // state.add_repos_from_config();
-            // state.save_state();
 
-            while let Some(message) = rx.recv().await {
+            // drop(tx_clone);
+
+            while let Some(message) = rx_clone.recv().await {
                 println!("Received: {}", message);
             }
 
