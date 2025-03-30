@@ -35,6 +35,7 @@ pub struct Job {
 
 impl Job {
     pub fn add_job(&mut self) {
+
         let connection = SqliteConnection::new();
         let conn = connection.unwrap().conn;
 
@@ -50,6 +51,18 @@ impl Job {
             }
         }
     }
+
+    pub fn check_exists(repo: String) -> bool {
+        let mut contained = false;
+        let jobs = Job::get_jobs();
+        for job in jobs {
+            if job.repo == repo {
+                contained = true;
+            }
+        }
+        contained
+    }
+
 
     pub fn update_sha(repo: String, sha: String) {
         let connection = SqliteConnection::new();

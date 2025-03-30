@@ -178,20 +178,22 @@ impl AppState {
                     left_out.remove(&repo.name);
                     repo.prepare();
                     self.add_repo_to_state(repo.clone().name, repo.to_owned());
-                    let mut job = Job {
-                        id: 0,
-                        repo: repo.path.clone(),
-                        status: "".to_string(),
-                        priority: 0,
-                        created_at: "".to_string(),
-                        updated_at: "".to_string(),
-                        start_time: "".to_string(),
-                        finish_time: "".to_string(),
-                        error_message: "".to_string(),
-                        result: "".to_string(),
-                        sha: repo.last_sha.clone().unwrap_or("".to_string()),
-                    };
-                    job.add_job()
+                    if !Job::check_exists(String::from(&repo.path)) {
+                        let mut job = Job {
+                            id: 0,
+                            repo: repo.path.clone(),
+                            status: "".to_string(),
+                            priority: 0,
+                            created_at: "".to_string(),
+                            updated_at: "".to_string(),
+                            start_time: "".to_string(),
+                            finish_time: "".to_string(),
+                            error_message: "".to_string(),
+                            result: "".to_string(),
+                            sha: repo.last_sha.clone().unwrap_or("".to_string()),
+                        };
+                        job.add_job()
+                    }
                 });
             left_out.iter().for_each(|remove_repo| {
                 println!("Removed from config: {}", remove_repo.1.name);
