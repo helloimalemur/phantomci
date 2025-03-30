@@ -30,7 +30,7 @@ pub struct Job {
     pub error_message: String,
     pub result: String,
     pub sha: String,
-    pub target_branch: String
+    pub target_branch: String,
 }
 
 impl Job {
@@ -157,10 +157,10 @@ pub fn load_env_variables(path: &str) -> rusqlite::Result<(), dotenv::Error> {
 
 #[cfg(test)]
 mod tests {
-    use rusqlite::params;
     use crate::database::job::Job;
     use crate::database::SqliteConnection;
     use crate::util::default_config_path;
+    use rusqlite::params;
 
     #[test]
     fn test_insert() {
@@ -200,7 +200,6 @@ mod tests {
         let repo = "git@code.koonts.net:helloimalemur/testing".to_string();
         let target_branch = "main".to_string();
         let sha = "test".to_string();
-
 
         let connection = SqliteConnection::new();
         let conn = connection.unwrap().conn;

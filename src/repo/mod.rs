@@ -124,9 +124,7 @@ impl Repo {
             self.last_sha = Some(self.get_sha_by_repo());
             let last_sha = self.last_sha.clone().unwrap_or_default();
             // last sha
-            if last_sha != latest_sha
-                && !self.clone().last_sha.unwrap().is_empty()
-            {
+            if last_sha != latest_sha && !self.clone().last_sha.unwrap().is_empty() {
                 self.set_sha_by_repo(latest_sha.clone());
                 println!("========================================================");
                 println!("{}", Local::now().format("%Y-%m-%d %H:%M:%S"));
@@ -312,7 +310,11 @@ impl Repo {
     }
 
     fn set_sha_by_repo(&self, latest_sha: String) {
-        Job::update_sha(String::from(&self.path), self.target_branch.clone(), latest_sha.clone());
+        Job::update_sha(
+            String::from(&self.path),
+            self.target_branch.clone(),
+            latest_sha.clone(),
+        );
     }
 }
 

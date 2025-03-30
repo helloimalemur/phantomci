@@ -179,7 +179,10 @@ impl AppState {
                     left_out.remove(&repo.name);
                     repo.prepare();
                     self.add_repo_to_state(repo.clone().name, repo.to_owned());
-                    if !Job::check_exists(String::from(&repo.path), String::from(&repo.target_branch)) {
+                    if !Job::check_exists(
+                        String::from(&repo.path),
+                        String::from(&repo.target_branch),
+                    ) {
                         let mut job = Job {
                             id: 0,
                             repo: repo.path.clone(),
