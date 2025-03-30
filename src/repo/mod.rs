@@ -10,7 +10,7 @@ use std::io::{BufRead, Write};
 use std::path::Path;
 use std::process::{exit, Command};
 use std::{env, fs};
-use crate::database::Job;
+use crate::database::job::Job;
 
 // Struct to represent a repository
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
