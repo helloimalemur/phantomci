@@ -30,6 +30,7 @@ pub struct Job {
     pub error_message: String,
     pub result: String,
     pub sha: String,
+    pub target_branch: String
 }
 
 impl Job {
@@ -110,6 +111,7 @@ impl Job {
                         error_message: row.get(8)?,
                         result: row.get(9)?,
                         sha: row.get(10)?,
+                        target_branch: row.get(11)?,
                     })
                 });
 
@@ -139,10 +141,10 @@ impl Job {
         jobs
     }
 
-    pub fn get_jobs_by_repo(repo: String) -> Vec<Job> {
+    pub fn get_jobs_by_repo(repo: String, branch: String) -> Vec<Job> {
         let mut jobs = Job::get_jobs();
         for job in jobs.clone() {
-            if job.repo == repo {
+            if job.repo == repo && job.target_branch == branch {
                 jobs.push(job);
             }
         }

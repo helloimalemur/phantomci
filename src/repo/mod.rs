@@ -86,6 +86,7 @@ impl Repo {
             error_message: "".to_string(),
             result: "".to_string(),
             sha: String::from(self.clone().last_sha.unwrap_or_default()),
+            target_branch: self.target_branch.clone(),
         };
         job.add_job();
     }
@@ -300,7 +301,8 @@ impl Repo {
 
     fn get_sha_by_repo(&self) -> String {
         let repo = String::from(&self.path);
-        let jobs = Job::get_jobs_by_repo(repo);
+        let branch = String::from(&self.target_branch);
+        let jobs = Job::get_jobs_by_repo(repo, branch);
         let mut sha = String::new();
         for job in jobs {
             sha = job.sha;

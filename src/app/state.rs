@@ -192,6 +192,7 @@ impl AppState {
                             error_message: "".to_string(),
                             result: "".to_string(),
                             sha: repo.last_sha.clone().unwrap_or("".to_string()),
+                            target_branch: repo.target_branch.clone(),
                         };
                         job.add_job()
                     }

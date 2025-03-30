@@ -39,7 +39,8 @@ impl SqliteConnection {
             finish_time DATETIME,                -- When the job execution ended
             error_message TEXT,                  -- Error message if the job failed
             result TEXT,                        -- Any result output or summary from the job execution
-            sha TEXT                        -- Any result output or summary from the job execution
+            sha TEXT,                        -- Any result output or summary from the job execution
+            target_branch TEXT                  -- Any result output or summary from the job execution
         )",
             (),
         ) {
