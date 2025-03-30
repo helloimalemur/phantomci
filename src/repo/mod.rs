@@ -1,3 +1,4 @@
+use crate::database::job::Job;
 use crate::parser::parse_workflow;
 use crate::util::{default_config_path, default_repo_work_path};
 use crate::webhook::{Webhook, WebhookConfig, WebhookType};
@@ -10,7 +11,6 @@ use std::io::{BufRead, Write};
 use std::path::Path;
 use std::process::{exit, Command};
 use std::{env, fs};
-use crate::database::job::Job;
 
 // Struct to represent a repository
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
@@ -122,7 +122,9 @@ impl Repo {
             // check sqlite
             self.last_sha = Some(self.get_sha_by_repo());
             // last sha
-            if self.last_sha.as_ref() != Some(&latest_sha) && (!self.clone().last_sha.unwrap().is_empty()) {
+            if self.last_sha.as_ref() != Some(&latest_sha)
+                && (!self.clone().last_sha.unwrap().is_empty())
+            {
                 self.set_sha_by_repo(latest_sha.clone());
                 println!("========================================================");
                 println!("{}", Local::now().format("%Y-%m-%d %H:%M:%S"));

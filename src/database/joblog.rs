@@ -1,5 +1,5 @@
-use chrono::Local;
 use crate::database::SqliteConnection;
+use chrono::Local;
 use rusqlite::params;
 
 #[derive(Debug, Clone)]
@@ -12,7 +12,6 @@ pub struct JobLog {
 
 impl JobLog {
     pub fn add_job_log(&mut self) {
-
         let connection = SqliteConnection::new();
         let conn = connection.unwrap().conn;
 
@@ -21,18 +20,14 @@ impl JobLog {
             params![self.repo, self.log_message, Local::now().to_rfc3339()],
         ) {
             Ok(_) => println!("Wrote job log successfully"),
-            Err(error) => println!("{}", error)
+            Err(error) => println!("{}", error),
         }
     }
-
-
 
     pub fn get_logs() -> Vec<JobLog> {
         if let Ok(sql) = SqliteConnection::new() {
             let mut logs: Vec<JobLog> = vec![];
-            let res = sql.conn.prepare(
-                "SELECT * FROM job_logs",
-            );
+            let res = sql.conn.prepare("SELECT * FROM job_logs");
 
             if let Ok(mut stmt) = sql.conn.prepare("SELECT * FROM job_logs") {
                 let job_iter = stmt.query_map([], |row| {

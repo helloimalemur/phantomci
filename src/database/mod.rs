@@ -1,10 +1,9 @@
+use crate::util::default_sqlite_path;
 use anyhow::Error;
 use rusqlite::Connection;
-use crate::util::default_sqlite_path;
 
 pub mod job;
 pub mod joblog;
-
 
 pub struct SqliteConnection {
     pub conn: Connection,

@@ -1,10 +1,10 @@
+use crate::database::joblog::JobLog;
 use crate::repo::Repo;
+use chrono::Local;
 use config::Config;
 use std::collections::{BTreeMap, HashMap};
 use std::process;
-use chrono::Local;
 use whoami::hostname;
-use crate::database::joblog::JobLog;
 
 // Parse the workflow file
 pub async fn parse_workflow(file_path: &str, repo: Repo) {

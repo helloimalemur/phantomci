@@ -14,7 +14,7 @@ enum JobColumn {
     FinishTime,
     ErrorMessage,
     Result,
-    Sha
+    Sha,
 }
 
 #[derive(Debug, Clone)]
@@ -29,12 +29,11 @@ pub struct Job {
     pub finish_time: String,
     pub error_message: String,
     pub result: String,
-    pub sha: String
+    pub sha: String,
 }
 
 impl Job {
     pub fn add_job(&mut self) {
-
         let connection = SqliteConnection::new();
         let conn = connection.unwrap().conn;
 
@@ -67,7 +66,6 @@ impl Job {
         contained
     }
 
-
     pub fn update_sha(repo: String, sha: String) {
         let connection = SqliteConnection::new();
         let conn = connection.unwrap().conn;
@@ -76,10 +74,7 @@ impl Job {
             "UPDATE jobs
             SET sha = ?1
             WHERE repo = ?2",
-            params![
-                sha,
-                repo
-        ],
+            params![sha, repo],
         ) {
             Ok(rows_updated) => {
                 if rows_updated > 0 {
@@ -87,7 +82,7 @@ impl Job {
                 } else {
                     println!("No matching job to update");
                 }
-            },
+            }
             Err(error) => {
                 println!("Update error: {}", error);
             }
@@ -99,9 +94,7 @@ impl Job {
     pub fn get_jobs() -> Vec<Job> {
         if let Ok(sql) = SqliteConnection::new() {
             let mut jobs: Vec<Job> = vec![];
-            let res = sql.conn.prepare(
-                "SELECT * FROM jobs",
-            );
+            let res = sql.conn.prepare("SELECT * FROM jobs");
 
             if let Ok(mut stmt) = sql.conn.prepare("SELECT * FROM jobs") {
                 let job_iter = stmt.query_map([], |row| {
@@ -156,8 +149,6 @@ impl Job {
         jobs
     }
 }
-
-
 
 pub fn load_env_variables(path: &str) -> rusqlite::Result<(), dotenv::Error> {
     let env_path = format!("{}.env", path);

@@ -1,3 +1,5 @@
+use crate::database::job::Job;
+use crate::database::SqliteConnection;
 use crate::options::{Arguments, Command};
 use crate::repo::{create_default_config, load_repos_from_config, Repo};
 use crate::util::service::configure_systemd;
@@ -15,8 +17,6 @@ use std::process::exit;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::time::interval;
-use crate::database::job::Job;
-use crate::database::SqliteConnection;
 
 // Struct to hold application state
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
