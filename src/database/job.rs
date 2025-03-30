@@ -150,25 +150,6 @@ impl Job {
         }
         jobs
     }
-
-    // fn read_by(job_column: JobColumn, column_value: String) -> Job {
-    //     match job_column {
-    //         JobColumn::Id => {}
-    //         JobColumn::Description => {}
-    //         JobColumn::Status => {}
-    //         JobColumn::Priority => {}
-    //         JobColumn::CreatedAt => {}
-    //         JobColumn::UpdatedAt => {}
-    //         JobColumn::StartTime => {}
-    //         JobColumn::FinishTime => {}
-    //         JobColumn::ErrorMessage => {}
-    //         JobColumn::Result => {}
-    //     }
-    // }
-
-    // fn fetch_latest_sha(&self) -> Option<String> {
-    //
-    // }
 }
 
 
