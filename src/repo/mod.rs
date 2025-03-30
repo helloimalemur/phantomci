@@ -312,7 +312,7 @@ impl Repo {
     }
 
     fn set_sha_by_repo(&self, latest_sha: String) {
-        Job::update_sha(String::from(&self.path), latest_sha.clone(), self.target_branch.clone());
+        Job::update_sha(String::from(&self.path), self.target_branch.clone(), latest_sha.clone());
     }
 }
 

@@ -157,7 +157,9 @@ pub fn load_env_variables(path: &str) -> rusqlite::Result<(), dotenv::Error> {
 
 #[cfg(test)]
 mod tests {
+    use rusqlite::params;
     use crate::database::job::Job;
+    use crate::database::SqliteConnection;
     use crate::util::default_config_path;
 
     #[test]
@@ -178,6 +180,7 @@ mod tests {
             error_message: "".to_string(),
             result: "".to_string(),
             sha: "".to_string(),
+            target_branch: "".to_string(),
         };
 
         job.add_job();
@@ -189,6 +192,33 @@ mod tests {
         println!("{:?}", jobs);
         for job in jobs {
             assert_eq!(job.status, "running");
+        }
+    }
+
+    #[test]
+    pub fn update_sha() {
+        let repo = "git@code.koonts.net:helloimalemur/testing".to_string();
+        let target_branch = "main".to_string();
+        let sha = "test".to_string();
+
+
+        let connection = SqliteConnection::new();
+        let conn = connection.unwrap().conn;
+
+        match conn.execute(
+            "UPDATE jobs SET sha = ?1 WHERE repo = ?2 AND target_branch = ?3",
+            params![sha, repo, target_branch],
+        ) {
+            Ok(rows_updated) => {
+                if rows_updated > 0 {
+                    println!("SHA Update successful");
+                } else {
+                    println!("No matching job to update");
+                }
+            }
+            Err(error) => {
+                println!("Update error: {}", error);
+            }
         }
     }
 }
