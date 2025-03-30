@@ -135,7 +135,7 @@ impl Repo {
             // let workflow_path = Path::new(&repo.path).join(&repo.workflow_file);
             self.triggered = false;
             let wp = format!(
-                "{}workflow/{}.toml",
+                "{}/workflow/{}.toml",
                 default_repo_work_path(self.path.split('/').last().unwrap().to_string()).unwrap(),
                 self.target_branch
             );
