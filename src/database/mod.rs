@@ -34,7 +34,7 @@ pub struct Job {
 }
 
 impl Job {
-    pub fn write(&mut self) {
+    pub fn add_job(&mut self) {
         let connection = SqliteConnection::new();
         let conn = connection.unwrap().conn;
 
@@ -47,6 +47,32 @@ impl Job {
                 ),
             Err(error) => {
                 println!("{}", error)
+            }
+        }
+    }
+
+    pub fn update_sha(repo: String, sha: String) {
+        let connection = SqliteConnection::new();
+        let conn = connection.unwrap().conn;
+
+        match conn.execute(
+            "UPDATE jobs
+            SET sha = ?1
+            WHERE repo = ?2",
+            params![
+                sha,
+                repo
+        ],
+        ) {
+            Ok(rows_updated) => {
+                if rows_updated > 0 {
+                    println!("Update successful");
+                } else {
+                    println!("No matching job to update");
+                }
+            },
+            Err(error) => {
+                println!("Update error: {}", error);
             }
         }
     }
@@ -148,9 +174,6 @@ pub struct SqliteConnection {
 impl SqliteConnection {
     pub fn new() -> Result<SqliteConnection, Error> {
         let conn = if let Ok(sqlite_path) = default_sqlite_path() {
-            if let Err(e) = load_env_variables(&sqlite_path) {
-                eprintln!("environment variables not loaded: {}", e);
-            }
             Connection::open(sqlite_path)?
         } else {
             panic!("unable to connect to database")
@@ -183,8 +206,6 @@ impl SqliteConnection {
             (),
         ) {
             eprintln!("Error: {}", e);
-        } else {
-            println!("Table Created: jobs");
         }
 
         if let Err(e) = self.conn.execute(
@@ -198,15 +219,13 @@ impl SqliteConnection {
             (),
         ) {
             eprintln!("Error: {}", e);
-        } else {
-            println!("Table Created: job_logs");
         }
 
         Ok(())
     }
 }
 
-fn load_env_variables(path: &str) -> rusqlite::Result<(), dotenv::Error> {
+pub(crate) fn load_env_variables(path: &str) -> rusqlite::Result<(), dotenv::Error> {
     let env_path = format!("{}.env", path);
     dotenv::from_path(Path::new(&env_path)).map(|_| println!("env: {}", env_path))
 }
@@ -236,7 +255,7 @@ mod tests {
             sha: "".to_string(),
         };
 
-        job.write();
+        job.add_job();
     }
 
     #[test]

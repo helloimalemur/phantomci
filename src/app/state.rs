@@ -1,4 +1,4 @@
-use crate::database::SqliteConnection;
+use crate::database::{Job, SqliteConnection};
 use crate::options::{Arguments, Command};
 use crate::repo::{create_default_config, load_repos_from_config, Repo};
 use crate::util::service::configure_systemd;
@@ -36,7 +36,7 @@ impl AppState {
             if let Ok(c) = SqliteConnection::new() {
                 let mut state = AppState {
                     repos: Arc::new(Mutex::new(HashMap::new())),
-                    scm_internal: 60,
+                    scm_internal: 15,
                     db_conn: Some(Arc::new(Mutex::new(c.conn))),
                 };
                 state.add_repos_from_config();
@@ -177,7 +177,21 @@ impl AppState {
                 .for_each(|repo| {
                     left_out.remove(&repo.name);
                     repo.prepare();
-                    self.add_repo_to_state(repo.clone().name, repo.to_owned())
+                    self.add_repo_to_state(repo.clone().name, repo.to_owned());
+                    let mut job = Job {
+                        id: 0,
+                        repo: repo.path.clone(),
+                        status: "".to_string(),
+                        priority: 0,
+                        created_at: "".to_string(),
+                        updated_at: "".to_string(),
+                        start_time: "".to_string(),
+                        finish_time: "".to_string(),
+                        error_message: "".to_string(),
+                        result: "".to_string(),
+                        sha: repo.last_sha.clone().unwrap_or("".to_string()),
+                    };
+                    job.add_job()
                 });
             left_out.iter().for_each(|remove_repo| {
                 println!("Removed from config: {}", remove_repo.1.name);
