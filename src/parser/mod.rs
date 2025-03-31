@@ -26,9 +26,6 @@ pub async fn parse_workflow(file_path: &str, repo: Repo, tx_clone: Sender<String
     for e in map.iter() {
         run_command(repo.to_owned(), e.1.to_owned(), tx_clone.clone()).await
     }
-
-    println!("========================================================");
-    println!("========================================================");
 }
 
 async fn run_command(repo: Repo, command: WorkflowCommand, tx_clone: Sender<String>) {
@@ -54,8 +51,7 @@ async fn run_command(repo: Repo, command: WorkflowCommand, tx_clone: Sender<Stri
                 output = String::from_utf8_lossy(&a.stdout).to_string();
             }
         }
-
-        let message = format!("{} :: {}", repo.name, output.clone());
+        let message = format!("{} :: {} \n ✅ Workflow complete for {}:{}", repo.name, output.clone(), repo.path, repo.target_branch);
         let mut log = JobLog {
             id: 0,
             repo: repo.path.clone(),

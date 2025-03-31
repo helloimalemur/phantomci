@@ -238,6 +238,7 @@ impl AppState {
             ticker.tick().await;
             let mut repos = self.repos.lock().unwrap().to_owned();
             for (_, repo) in repos.iter_mut() {
+                println!("     - {}         ({}) ✅", repo.path, repo.target_branch);
                 repo.check_repo_changes();
                 repo.check_repo_triggered(tx_clone.clone()).await
             }
@@ -247,7 +248,7 @@ impl AppState {
 
             loop {
                 match rx.try_recv() {
-                    Ok(msg) => println!("Received: {}", msg),
+                    Ok(msg) => println!("{}", msg),
                     Err(TryRecvError::Empty) => break, // nothing left to read
                     Err(TryRecvError::Disconnected) => {
                         // println!("Channel closed.");
