@@ -12,7 +12,6 @@ use std::collections::HashMap;
 use std::fs;
 use std::fs::OpenOptions;
 use std::io::Write;
-use std::ops::Deref;
 use std::path::Path;
 use std::process::exit;
 use std::sync::{Arc, Mutex};
@@ -229,11 +228,11 @@ impl AppState {
         );
         let interval_duration = Duration::new(self.scm_internal.clone(), 0);
         let mut ticker = interval(interval_duration);
-
+        #[allow(unused)]
         let (mut tx, mut rx) = tokio::sync::mpsc::channel::<String>(100);
 
         loop {
-            let mut tx_clone = tx.clone();
+            let tx_clone = tx.clone();
             // let mut rx_clone = &mut rx;
 
             ticker.tick().await;

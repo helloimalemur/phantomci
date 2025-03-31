@@ -4,9 +4,11 @@ use rusqlite::params;
 
 #[derive(Debug, Clone)]
 pub struct JobLog {
+    #[allow(unused)]
     pub id: i32,
     pub repo: String,
     pub log_message: String,
+    #[allow(unused)]
     pub logged_at: String,
 }
 
@@ -23,9 +25,10 @@ impl JobLog {
             Err(error) => println!("{}", error),
         }
     }
-
+    #[allow(unused)]
     pub fn get_logs() -> Vec<JobLog> {
         if let Ok(sql) = SqliteConnection::new() {
+            #[allow(unused)]
             let mut logs: Vec<JobLog> = vec![];
             let res = sql.conn.prepare("SELECT * FROM job_logs");
 
@@ -54,7 +57,7 @@ impl JobLog {
             vec![]
         }
     }
-
+    #[allow(unused)]
     pub fn get_logs_by_repo(repo: String) -> Vec<JobLog> {
         let mut logs = JobLog::get_logs();
         for log in logs.clone() {

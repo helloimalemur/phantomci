@@ -1,8 +1,10 @@
 use crate::database::SqliteConnection;
+#[allow(unused)]
 use rusqlite::fallible_iterator::FallibleIterator;
 use rusqlite::params;
 use std::path::Path;
 
+#[allow(unused)]
 enum JobColumn {
     Id,
     Repo,
@@ -19,6 +21,7 @@ enum JobColumn {
 
 #[derive(Debug, Clone)]
 pub struct Job {
+    #[allow(unused)]
     pub id: i32,
     pub repo: String,
     pub status: String,
@@ -44,9 +47,9 @@ impl Job {
                     "INSERT INTO jobs (repo, status, priority, created_at, updated_at, start_time, finish_time, error_message, result, sha, target_branch) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
                     params![self.repo, self.status, self.priority, self.created_at, self.updated_at, self.start_time, self.finish_time, self.error_message, self.result, self.sha, self.target_branch],
                 ) {
-                    Ok(_) => (
+                    Ok(_) =>
                         println!("Added successfully")
-                    ),
+                    ,
                     Err(error) => {
                         println!("{}", error)
                     }
@@ -93,7 +96,7 @@ impl Job {
     pub fn get_jobs() -> Vec<Job> {
         if let Ok(sql) = SqliteConnection::new() {
             let mut jobs: Vec<Job> = vec![];
-            let res = sql.conn.prepare("SELECT * FROM jobs");
+            // let res = sql.conn.prepare("SELECT * FROM jobs");
 
             if let Ok(mut stmt) = sql.conn.prepare("SELECT * FROM jobs") {
                 let job_iter = stmt.query_map([], |row| {
@@ -128,7 +131,7 @@ impl Job {
             vec![]
         }
     }
-
+    #[allow(unused)]
     pub fn get_jobs_by_status(status: String) -> Vec<Job> {
         let mut jobs = Job::get_jobs();
         for job in jobs.clone() {
