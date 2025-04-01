@@ -15,6 +15,8 @@ pub enum Command {
     Configure {
         sub: String,
     },
-    List,
+    List {
+        sub: String,
+    },
     Reset,
 }

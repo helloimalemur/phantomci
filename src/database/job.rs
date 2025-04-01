@@ -3,6 +3,7 @@ use crate::database::SqliteConnection;
 use rusqlite::fallible_iterator::FallibleIterator;
 use rusqlite::params;
 use std::path::Path;
+use chrono::Local;
 
 #[allow(unused)]
 enum JobColumn {
@@ -45,7 +46,7 @@ impl Job {
             false => {
                 match conn.execute(
                     "INSERT INTO jobs (repo, status, priority, created_at, updated_at, start_time, finish_time, error_message, result, sha, target_branch) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
-                    params![self.repo, self.status, self.priority, self.created_at, self.updated_at, self.start_time, self.finish_time, self.error_message, self.result, self.sha, self.target_branch],
+                    params![self.repo, self.status, self.priority, Local::now().to_rfc3339(), Local::now().to_rfc3339(), self.start_time, self.finish_time, self.error_message, self.result, self.sha, self.target_branch],
                 ) {
                     Ok(_) =>
                         println!("Added successfully")
@@ -81,6 +82,92 @@ impl Job {
             Ok(rows_updated) => {
                 if rows_updated > 0 {
                     println!("SHA Update successful");
+                    Self::update_updated_time(repo, target_branch);
+                } else {
+                    println!("No matching job to update");
+                }
+            }
+            Err(error) => {
+                println!("Update error: {}", error);
+            }
+        }
+    }
+
+    pub fn update_status(repo: String, target_branch: String, status: String) {
+        let connection = SqliteConnection::new();
+        let conn = connection.unwrap().conn;
+
+        match conn.execute(
+            "UPDATE jobs SET status = ?1 WHERE repo = ?2 AND target_branch = ?3",
+            params![status, repo, target_branch],
+        ) {
+            Ok(rows_updated) => {
+                if rows_updated > 0 {
+                    println!("Status Update successful");
+                    Self::update_updated_time(repo, target_branch);
+                } else {
+                    println!("No matching job to update");
+                }
+            }
+            Err(error) => {
+                println!("Update error: {}", error);
+            }
+        }
+    }
+
+    pub fn update_updated_time(repo: String, target_branch: String) {
+        let connection = SqliteConnection::new();
+        let conn = connection.unwrap().conn;
+
+        match conn.execute(
+            "UPDATE jobs SET updated_at = ?1 WHERE repo = ?2 AND target_branch = ?3",
+            params![Local::now().to_rfc3339(), repo, target_branch],
+        ) {
+            Ok(rows_updated) => {
+                if rows_updated > 0 {
+                    println!("Status Update successful");
+                } else {
+                    println!("No matching job to update");
+                }
+            }
+            Err(error) => {
+                println!("Update error: {}", error);
+            }
+        }
+    }
+
+    pub fn update_start_time(repo: String, target_branch: String) {
+        let connection = SqliteConnection::new();
+        let conn = connection.unwrap().conn;
+
+        match conn.execute(
+            "UPDATE jobs SET started_at = ?1 WHERE repo = ?2 AND target_branch = ?3",
+            params![Local::now().to_rfc3339(), repo, target_branch],
+        ) {
+            Ok(rows_updated) => {
+                if rows_updated > 0 {
+                    println!("Status Update successful");
+                } else {
+                    println!("No matching job to update");
+                }
+            }
+            Err(error) => {
+                println!("Update error: {}", error);
+            }
+        }
+    }
+
+    pub fn update_finished_time(repo: String, target_branch: String) {
+        let connection = SqliteConnection::new();
+        let conn = connection.unwrap().conn;
+
+        match conn.execute(
+            "UPDATE jobs SET finished_at = ?1 WHERE repo = ?2 AND target_branch = ?3",
+            params![Local::now().to_rfc3339(), repo, target_branch],
+        ) {
+            Ok(rows_updated) => {
+                if rows_updated > 0 {
+                    println!("Status Update successful");
                 } else {
                     println!("No matching job to update");
                 }
@@ -131,7 +218,7 @@ impl Job {
             vec![]
         }
     }
-    #[allow(unused)]
+
     pub fn get_jobs_by_status(status: String) -> Vec<Job> {
         let mut jobs = Job::get_jobs();
         for job in jobs.clone() {

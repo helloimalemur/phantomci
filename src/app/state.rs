@@ -41,8 +41,8 @@ impl AppState {
                     scm_internal: 15,
                     db_conn: Some(Arc::new(Mutex::new(c.conn))),
                 };
-                state.add_repos_from_config();
                 state.process_arguments(config_dir.as_str());
+                state.add_repos_from_config();
                 state
             } else {
                 panic!("Failed to connect to SQLite database");
@@ -124,14 +124,31 @@ impl AppState {
             Some(Command::Reset) => {
                 default_repo_work_path_remove_cache_data();
             }
-            Some(Command::List) => {
-                let repo_config_path = format!("{}Repo.toml", config_dir);
-                println!("Listing repos: {}", repo_config_path);
-                let repo = load_repos_from_config(config_dir);
-                for re in repo.iter() {
-                    println!("{} - {}", re.path, re.target_branch);
+            Some(Command::List {sub}) => match sub.as_str() {
+                "repo" => {
+                    let jobs = Job::get_jobs();
+                    let repo_config_path = format!("{}Repo.toml", config_dir);
+                    println!("Listing repos: {}", repo_config_path);
+                    let repo = load_repos_from_config(config_dir);
+                    for re in repo.iter() {
+                        let jobs = jobs.iter()
+                            .filter(|a| {a.target_branch.eq_ignore_ascii_case(re.target_branch.as_str())})
+                            .filter(|a| {a.repo.eq_ignore_ascii_case(re.path.as_str())})
+                            .cloned()
+                            .collect::<Vec<Job>>();
+                        println!("{} - {} :: {}", re.path, re.target_branch, jobs.last().unwrap().status.as_str());
+                    }
+                    exit(0);
                 }
-                exit(0);
+                "sqlite" => {
+                    let jobs = Job::get_jobs();
+
+                    for job in jobs.iter() {
+                        println!("{:?}\n", job);
+                    }
+                    exit(0);
+                }
+                &_ => {}
             }
         }
     }
@@ -187,7 +204,7 @@ impl AppState {
                         let mut job = Job {
                             id: 0,
                             repo: repo.path.clone(),
-                            status: "".to_string(),
+                            status: "idle".to_string(),
                             priority: 0,
                             created_at: "".to_string(),
                             updated_at: "".to_string(),

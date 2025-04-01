@@ -123,17 +123,17 @@ impl Repo {
             // last sha
             if last_sha != latest_sha && !self.clone().last_sha.unwrap().is_empty() {
                 self.set_sha_by_repo(latest_sha.clone());
+                Job::update_status(self.path.clone(), self.target_branch.clone(), "running".to_string());
+                self.triggered = true;
+                self.last_sha = Some(latest_sha.to_owned());
+
+
                 println!("========================================================");
                 println!("{}", Local::now().format("%Y-%m-%d %H:%M:%S"));
                 println!(
                     "Change detected in repo: {}\nNew SHA: {}",
                     self.path, latest_sha
                 );
-
-                self.last_sha = Some(latest_sha.to_owned());
-
-                self.triggered = true;
-
                 println!("========================================================");
             }
         } else {
@@ -144,6 +144,8 @@ impl Repo {
     // Check for changes in a repository and handle them
     pub async fn check_repo_triggered(&mut self, tx_clone: Sender<String>) {
         if self.triggered {
+            Job::update_start_time(self.path.clone(), self.target_branch.clone());
+
             // Parse workflow file
             self.triggered = false;
             let wp = format!(
