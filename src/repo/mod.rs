@@ -122,6 +122,13 @@ impl Repo {
             // check sqlite
             self.last_sha = Some(self.get_sha_by_repo());
             let last_sha = self.last_sha.clone().unwrap_or_default();
+            
+            // if sha is not set update it
+            if self.clone().last_sha.unwrap().is_empty() {
+                self.last_sha = self.git_latest_sha(&latest_sha);
+                self.set_sha_by_repo(latest_sha.clone());
+            }
+
             // last sha
             if last_sha != latest_sha && !self.clone().last_sha.unwrap().is_empty() {
                 self.set_sha_by_repo(latest_sha.clone());
