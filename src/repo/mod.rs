@@ -124,13 +124,13 @@ impl Repo {
             let last_sha = self.last_sha.clone().unwrap_or_default();
             
             // if sha is not set update it
-            if self.clone().last_sha.unwrap().is_empty() {
+            if self.clone().last_sha.unwrap().is_empty() || self.clone().last_sha.is_none() {
                 self.last_sha = self.git_latest_sha(&latest_sha);
                 self.set_sha_by_repo(latest_sha.clone());
             }
 
             // last sha
-            if last_sha != latest_sha && !self.clone().last_sha.unwrap().is_empty() {
+            if last_sha != latest_sha && !self.clone().last_sha.unwrap().is_empty() && !self.clone().last_sha.is_none() {
                 self.set_sha_by_repo(latest_sha.clone());
                 Job::update_status(self.path.clone(), self.target_branch.clone(), "running".to_string());
                 self.triggered = true;
