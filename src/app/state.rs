@@ -66,7 +66,6 @@ impl AppState {
             }) => {
                 if branch_name.len() == 0 {
                     println!("Branch name is empty");
-                    exit(1);
                 }
                 if !repo_path.is_empty() {
                     let repo_name_only = repo_path
@@ -85,7 +84,6 @@ impl AppState {
                         false,
                     )
                     .write_repo_to_config();
-                    exit(0);
                 }
             }
 
@@ -94,30 +92,25 @@ impl AppState {
                 branch: None,
             }) => {
                 println!("Missing branch name: {}", &path);
-                exit(1);
             }
             Some(Command::Add {
                 path: None,
                 branch: Some(branch),
             }) => {
                 println!("Missing repo path: {}", &branch);
-                exit(1);
             }
             Some(Command::Add {
                 path: None,
                 branch: None,
             }) => {
                 println!("Missing repo path");
-                exit(1);
             }
             Some(Command::Configure { sub }) => match sub.as_str() {
                 "service" => {
                     configure_systemd();
-                    exit(0);
                 }
                 &_ => {
                     println!("Invalid subcommand");
-                    exit(1);
                 }
             },
             Some(Command::Reset) => {
@@ -137,19 +130,29 @@ impl AppState {
                             .collect::<Vec<Job>>();
                         println!("{} - {} :: {}", re.path, re.target_branch, jobs.last().unwrap().status.as_str());
                     }
-                    exit(0);
                 }
-                "sqlite" => {
+                "jobs" => {
                     let jobs = Job::get_jobs();
 
                     for job in jobs.iter() {
                         println!("{:?}\n", job);
                     }
-                    exit(0);
                 }
+                "logs" => {
+                    let jobs = Job::get_jobs();
+
+                    for job in jobs.iter() {
+                        println!("{:?}\n", job);
+                    }
+                }
+                "help" => {
+                    println!("Usage:\nlist jobs: list jobs\nlist logs: list job logs");
+                }
+                
                 &_ => {}
             }
         }
+        exit(0);
     }
 
     pub fn save_state(&self) {
