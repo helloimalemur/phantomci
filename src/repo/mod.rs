@@ -69,6 +69,8 @@ impl Repo {
         if !Path::new(&self.work_dir).exists()
             && fs::create_dir_all(Path::new(&self.work_dir)).is_ok()
         {
+            println!("Created directory: {}", self.work_dir);
+            println!("Cloning: {}", self.work_dir);
             self.clone_repo();
             self.get_default_branch();
         }
