@@ -16,7 +16,7 @@ async fn main() {
     logging::init();
     if let Some(config) = default_config_path() {
         if let Err(e) = load_env_variables(config.as_str()) {
-            eprintln!("environment variables not loaded: {}", e);
+            eprintln!("environment variables not loaded\n{}: {}", config, e);
         }
     }
     let mut state = AppState::new();

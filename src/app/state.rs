@@ -58,8 +58,11 @@ impl AppState {
         }
         let arguments = Arguments::parse();
 
+        let mut run = false;
         match arguments.command {
-            None => {}
+            None => {
+                run = true;
+            }
             Some(Command::Add {
                 path: Some(repo_path),
                 branch: Some(branch_name),
@@ -152,7 +155,10 @@ impl AppState {
                 &_ => {}
             }
         }
-        exit(0);
+        
+        if !run {
+            exit(0);
+        }
     }
 
     pub fn save_state(&self) {
