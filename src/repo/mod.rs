@@ -73,7 +73,7 @@ impl Repo {
             self.get_default_branch();
         }
 
-        self.last_sha = self.git_latest_sha();
+        self.last_sha = self.git_latest_sha(&self.target_branch.to_string().clone());
 
         let mut job = Job {
             id: 0,
@@ -116,7 +116,7 @@ impl Repo {
     }
 
     pub fn check_repo_changes(&mut self) {
-        if let Some(latest_sha) = self.git_latest_sha() {
+        if let Some(latest_sha) = self.git_latest_sha(&self.target_branch.to_string().clone()) {
             // check sqlite
             self.last_sha = Some(self.get_sha_by_repo());
             let last_sha = self.last_sha.clone().unwrap_or_default();
@@ -165,7 +165,7 @@ impl Repo {
         }
     }
 
-    pub fn git_latest_sha(&mut self) -> Option<String> {
+    pub fn git_latest_sha(&mut self, branch: &str) -> Option<String> {
         if let Err(e) = self.fetch_pull() {
             eprintln!("Error: {}", e)
         }
@@ -173,12 +173,16 @@ impl Repo {
             .arg("-C")
             .arg(&self.work_dir)
             .arg("rev-parse")
-            .arg("HEAD")
+            .arg(format!("origin/{}", branch))
             .output();
 
         match output {
             Ok(output) if output.status.success() => {
                 Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
+            }
+            Ok(output) => {
+                eprintln!("Error: scm polling error: {:?}", output);
+                None
             }
             _ => {
                 eprintln!("Error: scm polling error: {}", self.name);

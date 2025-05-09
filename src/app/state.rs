@@ -42,7 +42,6 @@ impl AppState {
                     db_conn: Some(Arc::new(Mutex::new(c.conn))),
                 };
                 state.process_arguments(config_dir.as_str());
-                state.add_repos_from_config();
                 state
             } else {
                 panic!("Failed to connect to SQLite database");
@@ -243,6 +242,9 @@ impl AppState {
             "Starting Git SCM polling...\n     config: {}",
             default_config_path().unwrap()
         );
+        
+        self.add_repos_from_config();
+        
         let interval_duration = Duration::new(self.scm_internal.clone(), 0);
         let mut ticker = interval(interval_duration);
         #[allow(unused)]
