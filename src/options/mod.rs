@@ -15,8 +15,14 @@ pub enum Command {
     Configure {
         sub: String,
     },
-    List {
-        sub: String,
+    Logs {
+        sub: Option<String>,
+    },
+    Jobs {
+        sub: Option<String>,
+    },
+    Repo {
+        sub: Option<String>,
     },
     Reset,
 }

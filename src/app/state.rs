@@ -9,6 +9,7 @@ use chrono::Local;
 use clap::Parser;
 use rusqlite::Connection;
 use std::collections::HashMap;
+use std::env::args;
 use std::fs;
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -18,6 +19,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::sync::mpsc::error::TryRecvError;
 use tokio::time::interval;
+use crate::database::joblog::JobLog;
 
 // Struct to hold application state
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -119,8 +121,24 @@ impl AppState {
             Some(Command::Reset) => {
                 default_repo_work_path_remove_cache_data();
             }
-            Some(Command::List {sub}) => match sub.as_str() {
-                "repo" => {
+            Some(Command::Repo { sub }) => match sub.as_deref() {
+                Some(sub) => {
+                    let jobs = Job::get_jobs();
+                    let repo_config_path = format!("{}Repo.toml", config_dir);
+                    println!("Listing repos: {}", repo_config_path);
+                    let repo = load_repos_from_config(config_dir);
+                    for re in repo.iter() {
+                        if re.path.contains(sub) {
+                            let jobs = jobs.iter()
+                                .filter(|a| {a.target_branch.eq_ignore_ascii_case(re.target_branch.as_str())})
+                                .filter(|a| {a.repo.eq_ignore_ascii_case(re.path.as_str())})
+                                .cloned()
+                                .collect::<Vec<Job>>();
+                            println!("{} - {} :: {}", re.path, re.target_branch, jobs.last().unwrap().status.as_str());
+                        }
+                    }
+                }
+                None => {
                     let jobs = Job::get_jobs();
                     let repo_config_path = format!("{}Repo.toml", config_dir);
                     println!("Listing repos: {}", repo_config_path);
@@ -134,28 +152,41 @@ impl AppState {
                         println!("{} - {} :: {}", re.path, re.target_branch, jobs.last().unwrap().status.as_str());
                     }
                 }
-                "jobs" => {
+            }
+            Some(Command::Jobs {sub}) => match sub.as_deref() {
+                Some(sub) => {
                     let jobs = Job::get_jobs();
-
+                    for job in jobs.iter() {
+                        if job.repo.contains(sub) {
+                            println!("{:?}\n", job);
+                        }
+                    }
+                }
+                None => {
+                    let jobs = Job::get_jobs();
                     for job in jobs.iter() {
                         println!("{:?}\n", job);
                     }
                 }
-                "logs" => {
-                    let jobs = Job::get_jobs();
-
-                    for job in jobs.iter() {
-                        println!("{:?}\n", job);
+            }
+            Some(Command::Logs {sub}) => match sub.as_deref() {
+                Some(sub) => {
+                    let logs = JobLog::get_logs();
+                    for log in logs.iter() {
+                        if log.repo.contains(sub) {
+                            println!("{:#?}\n", log);
+                        }
                     }
                 }
-                "help" => {
-                    println!("Usage:\nlist jobs: list jobs\nlist logs: list job logs");
+                None => {
+                    let logs = JobLog::get_logs();
+                    for log in logs.iter() {
+                        println!("{:#?}\n", log);
+                    }
                 }
-                
-                &_ => {}
             }
         }
-        
+
         if !run {
             exit(0);
         }
@@ -251,9 +282,9 @@ impl AppState {
             "Starting Git SCM polling...\n     config: {}",
             default_config_path().unwrap()
         );
-        
+
         self.add_repos_from_config();
-        
+
         let interval_duration = Duration::new(self.scm_internal.clone(), 0);
         let mut ticker = interval(interval_duration);
         #[allow(unused)]
