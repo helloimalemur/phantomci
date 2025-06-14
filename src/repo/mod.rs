@@ -130,7 +130,7 @@ impl Repo {
             }
 
             // last sha
-            if last_sha != latest_sha && !self.clone().last_sha.unwrap().is_empty() && !self.clone().last_sha.is_none() {
+            if last_sha != latest_sha && !self.clone().last_sha.unwrap_or_default().is_empty() && !self.clone().last_sha.is_none() {
                 self.set_sha_by_repo(latest_sha.clone());
                 Job::update_status(self.path.clone(), self.target_branch.clone(), "running".to_string());
                 self.triggered = true;
