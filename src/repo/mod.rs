@@ -75,7 +75,8 @@ impl Repo {
             self.get_default_branch();
         }
 
-        self.last_sha = self.git_latest_sha(&self.target_branch.to_string().clone());
+        let branch = self.target_branch.clone();
+        self.last_sha = self.git_latest_sha(&branch);
 
         let mut job = Job {
             id: 0,
@@ -118,24 +119,27 @@ impl Repo {
     }
 
     pub fn check_repo_changes(&mut self) {
-        if let Some(latest_sha) = self.git_latest_sha(&self.target_branch.to_string().clone()) {
-            // check sqlite
-            self.last_sha = Some(self.get_sha_by_repo());
-            let last_sha = self.last_sha.clone().unwrap_or_default();
-            
-            // if sha is not set update it
-            if self.clone().last_sha.unwrap().is_empty() || self.clone().last_sha.is_none() {
-                self.last_sha = self.git_latest_sha(&latest_sha);
+        let branch = self.target_branch.clone();
+        if let Some(latest_sha) = self.git_latest_sha(&branch) {
+            // read last known SHA from DB (empty string if none)
+            let last_sha = self.get_sha_by_repo();
+
+            if last_sha.is_empty() {
+                // first-time initialization
                 self.set_sha_by_repo(latest_sha.clone());
+                self.last_sha = Some(latest_sha);
+                return;
             }
 
-            // last sha
-            if last_sha != latest_sha && !self.clone().last_sha.unwrap_or_default().is_empty() && !self.clone().last_sha.is_none() {
+            if last_sha != latest_sha {
                 self.set_sha_by_repo(latest_sha.clone());
-                Job::update_status(self.path.clone(), self.target_branch.clone(), "running".to_string());
+                Job::update_status(
+                    self.path.clone(),
+                    self.target_branch.clone(),
+                    "running".to_string(),
+                );
                 self.triggered = true;
-                self.last_sha = Some(latest_sha.to_owned());
-
+                self.last_sha = Some(latest_sha.clone());
 
                 println!("========================================================");
                 println!("{}", Local::now().format("%Y-%m-%d %H:%M:%S"));
@@ -157,19 +161,21 @@ impl Repo {
 
             // Parse workflow file
             self.triggered = false;
-            let wp = format!(
-                "{}/workflow/{}.toml",
-                default_repo_work_path(self.path.split('/').last().unwrap().to_string()).unwrap(),
-                self.target_branch
-            );
-            let workflow_path = Path::new(&wp);
-            if workflow_path.exists() {
-                parse_workflow(workflow_path.to_str().unwrap(), self.to_owned(), tx_clone).await;
+            let repo_name = self.path.split('/').last().unwrap_or("").to_string();
+            if let Some(base) = default_repo_work_path(repo_name) {
+                let wp = format!("{}/workflow/{}.toml", base, self.target_branch);
+                let workflow_path = Path::new(&wp);
+                if workflow_path.exists() {
+                    if let Some(wp_str) = workflow_path.to_str() {
+                        parse_workflow(wp_str, self.to_owned(), tx_clone).await;
+                    } else {
+                        eprintln!("Invalid workflow path");
+                    }
+                } else {
+                    eprintln!("Workflow file not found at {}", wp);
+                }
             } else {
-                eprintln!(
-                    "Workflow file not found at {}",
-                    workflow_path.to_str().unwrap()
-                );
+                eprintln!("Failed to determine default repo work path; skipping workflow parse");
             }
         }
     }
@@ -201,38 +207,19 @@ impl Repo {
     }
 
     pub fn fetch_pull(&mut self) -> Result<(), anyhow::Error> {
-        Command::new("git")
-            .arg("-C")
-            .arg(&self.work_dir)
-            .arg("stash")
-            .output()?;
-
-        Command::new("git")
-            .arg("-C")
-            .arg(&self.work_dir)
-            .arg("checkout")
-            .arg(&self.target_branch)
-            .output()?;
-
-        Command::new("git")
-            .arg("-C")
-            .arg(&self.work_dir)
-            .arg("reset")
-            .arg("--hard")
-            .arg("HEAD")
-            .output()?;
-
-        Command::new("git")
+        let out = Command::new("git")
             .arg("-C")
             .arg(&self.work_dir)
             .arg("fetch")
+            .arg("--all")
+            .arg("--prune")
             .output()?;
-
-        Command::new("git")
-            .arg("-C")
-            .arg(&self.work_dir)
-            .arg("pull")
-            .output()?;
+        if !out.status.success() {
+            anyhow::bail!(
+                "git fetch failed: {}",
+                String::from_utf8_lossy(&out.stderr)
+            );
+        }
         Ok(())
     }
 
@@ -273,7 +260,7 @@ impl Repo {
                 println!("Cloned successfully: {}", self.path);
             } else {
                 println!("Failed to clone: {}", self.path);
-                let _ = fs::remove_dir(Path::new(&self.work_dir));
+                let _ = fs::remove_dir_all(Path::new(&self.work_dir));
             }
         }
     }
@@ -286,18 +273,24 @@ impl Repo {
             .arg(&self.work_dir)
             .arg("remote")
             .arg("show")
-            .arg(&self.path)
+            .arg("origin")
             .output()
         {
-            let lines = output.stdout.lines();
-            if let Some(s) = lines
-                .map(|l| l.unwrap())
-                .filter(|l| l.contains("HEAD branch:"))
-                .map(|l| l.replace("HEAD branch:", ""))
-                .next()
-            {
-                head_branch = s.trim().to_string();
-                println!("Default branch: {}", head_branch);
+            if output.status.success() {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                if let Some(s) = stdout
+                    .lines()
+                    .find(|l| l.contains("HEAD branch:"))
+                    .map(|l| l.replace("HEAD branch:", ""))
+                {
+                    head_branch = s.trim().to_string();
+                    println!("Default branch: {}", head_branch);
+                }
+            } else {
+                eprintln!(
+                    "git remote show origin failed: {}",
+                    String::from_utf8_lossy(&output.stderr)
+                );
             }
         }
 
@@ -376,56 +369,35 @@ pub fn create_default_config(path: &String) {
 
 pub fn repo_work_dir(repo: &Repos) -> String {
     let rand = rand::random::<u64>();
-    let cur_user = whoami::username().unwrap();
+    let cur_user = whoami::username().unwrap_or_else(|_| "unknown".to_string());
+    // Resolve a stable repo name tail or fall back to random
+    let repo_name = repo
+        .path
+        .split('/')
+        .last()
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| rand.to_string());
+
     if cur_user.contains("root") {
         match OS {
-            "linux" => {
-                format!(
-                    "/root/.cache/phantom_ci/{}",
-                    repo.path
-                        .split('/')
-                        .last()
-                        .unwrap_or(rand.to_string().as_str())
-                )
-            }
-            "macos" => {
-                format!(
-                    "/var/root/.cache/phantom_ci/{}",
-                    repo.path
-                        .split('/')
-                        .last()
-                        .unwrap_or(rand.to_string().as_str())
-                )
-            }
-            &_ => {
-                panic!("Unsupported OS!");
-            }
+            "linux" => format!("/root/.cache/phantom_ci/{}", repo_name),
+            "macos" => format!(
+                "/var/root/.cache/phantom_ci/{}",
+                repo_name
+            ),
+            &_ => format!("/tmp/phantom_ci/{}", repo_name),
         }
     } else {
         match OS {
-            "linux" => {
-                format!(
-                    "/home/{}/.cache/phantom_ci/{}",
-                    cur_user,
-                    repo.path
-                        .split('/')
-                        .last()
-                        .unwrap_or(rand.to_string().as_str())
-                )
-            }
-            "macos" => {
-                format!(
-                    "/Users/{}/Library/Caches/com.helloimalemur.phantom_ci/{}",
-                    cur_user,
-                    repo.path
-                        .split('/')
-                        .last()
-                        .unwrap_or(rand.to_string().as_str())
-                )
-            }
-            &_ => {
-                panic!("Unsupported OS!");
-            }
+            "linux" => format!(
+                "/home/{}/.cache/phantom_ci/{}",
+                cur_user, repo_name
+            ),
+            "macos" => format!(
+                "/Users/{}/Library/Caches/com.helloimalemur.phantom_ci/{}",
+                cur_user, repo_name
+            ),
+            &_ => format!("/tmp/phantom_ci/{}", repo_name),
         }
     }
 }
