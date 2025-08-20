@@ -1,14 +1,17 @@
+# Example workflow for branch-specific file at $REPO_ROOT/workflow/<branch>.toml
+
 [0]
-run = "ls -lah"
-[1]
 run = "pwd"
+
+[1]
+run = "echo 'Running tests' && cargo test --all --quiet"
+
 [2]
-run = "rm -rf testproj/"
+run = "echo 'Building release' && cargo build --release --quiet"
+
 [3]
-run = "cargo new testproj"
+run = "echo 'Formatting check' && cargo fmt -- --check"
+
+# If you need shell features like && or pipes, explicitly call bash -lc
 [4]
-run = "cargo add tokio --manifest-path testproj/Cargo.toml"
-[5]
-run = "cargo run --manifest-path testproj/Cargo.toml"
-[6]
-run = "rm -rf testproj/"
+run = "bash -lc 'echo \"Current branch: $(git rev-parse --abbrev-ref HEAD)\"'"
