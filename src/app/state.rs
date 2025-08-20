@@ -82,7 +82,7 @@ impl AppState {
                     Repo::new(
                         repo_name_only.clone(),
                         repo_path.to_owned(),
-                        default_repo_work_path(repo_path.to_owned()).unwrap(),
+                        default_repo_work_path(repo_name_only.clone()).unwrap(),
                         None,
                         branch_name,
                         false,

@@ -209,6 +209,56 @@ impl Repo {
     }
 
     pub fn fetch_pull(&mut self) -> Result<(), anyhow::Error> {
+        // Ensure we have a valid repo directory
+        let git_dir = format!("{}/.git", self.work_dir);
+        if !Path::new(&git_dir).exists() {
+            // Attempt a fresh clone if the repo is missing
+            self.clone_repo();
+        }
+
+        // Ensure the remote URL is correct (some environments may have stale/malformed origin)
+        let current_url = Command::new("git")
+            .arg("-C")
+            .arg(&self.work_dir)
+            .arg("remote")
+            .arg("get-url")
+            .arg("origin")
+            .output();
+
+        let needs_update = match current_url {
+            Ok(o) if o.status.success() => {
+                let url = String::from_utf8_lossy(&o.stdout).trim().to_string();
+                url != self.path
+            }
+            _ => true, // no origin or failed; ensure it's set below
+        };
+
+        if needs_update {
+            // Try to set the correct origin URL
+            let _ = Command::new("git")
+                .arg("-C")
+                .arg(&self.work_dir)
+                .arg("remote")
+                .arg("remove")
+                .arg("origin")
+                .output();
+            let set_out = Command::new("git")
+                .arg("-C")
+                .arg(&self.work_dir)
+                .arg("remote")
+                .arg("add")
+                .arg("origin")
+                .arg(&self.path)
+                .output()?;
+            if !set_out.status.success() {
+                anyhow::bail!(
+                    "failed to set origin: {}",
+                    String::from_utf8_lossy(&set_out.stderr)
+                );
+            }
+        }
+
+        // Now fetch normally
         let out = Command::new("git")
             .arg("-C")
             .arg(&self.work_dir)
@@ -247,14 +297,18 @@ impl Repo {
     }
 
     fn clone_repo(&mut self) {
-        let p = self
-            .work_dir
-            .replace(self.work_dir.split('/').last().unwrap(), "");
+        // Determine parent directory robustly
+        let parent = Path::new(&self.work_dir)
+            .parent()
+            .map(|p| p.to_path_buf())
+            .unwrap_or_else(|| Path::new("/").to_path_buf());
+
         if let Ok(_output) = Command::new("git")
             .arg("-C")
-            .arg(p)
+            .arg(parent)
             .arg("clone")
             .arg(&self.path)
+            .arg(&self.work_dir) // explicitly clone into target dir
             .output()
         {
             let git_repo_path = format!("{}/.git", self.work_dir);
