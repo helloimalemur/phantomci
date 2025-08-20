@@ -25,14 +25,15 @@ impl JobLog {
             Err(error) => println!("{}", error),
         }
     }
-    #[allow(unused)]
+
+    // Fetch all logs ordered by newest first
     pub fn get_logs() -> Vec<JobLog> {
         if let Ok(sql) = SqliteConnection::new() {
-            #[allow(unused)]
             let mut logs: Vec<JobLog> = vec![];
-            let res = sql.conn.prepare("SELECT * FROM job_logs");
-
-            if let Ok(mut stmt) = sql.conn.prepare("SELECT * FROM job_logs") {
+            if let Ok(mut stmt) = sql
+                .conn
+                .prepare("SELECT id, repo, log_message, logged_at FROM job_logs ORDER BY logged_at DESC")
+            {
                 let job_iter = stmt.query_map([], |row| {
                     Ok(JobLog {
                         id: row.get(0)?,
@@ -57,14 +58,74 @@ impl JobLog {
             vec![]
         }
     }
-    #[allow(unused)]
-    pub fn get_logs_by_repo(repo: String) -> Vec<JobLog> {
-        let mut logs = JobLog::get_logs();
-        for log in logs.clone() {
-            if log.repo == repo {
-                logs.push(log);
+
+    // Fetch newest logs with a limit
+    pub fn get_logs_limited(limit: usize) -> Vec<JobLog> {
+        if let Ok(sql) = SqliteConnection::new() {
+            let mut logs: Vec<JobLog> = vec![];
+            let query = if limit == 0 {
+                "SELECT id, repo, log_message, logged_at FROM job_logs ORDER BY logged_at DESC".to_string()
+            } else {
+                format!(
+                    "SELECT id, repo, log_message, logged_at FROM job_logs ORDER BY logged_at DESC LIMIT {}",
+                    limit
+                )
+            };
+            if let Ok(mut stmt) = sql.conn.prepare(&query) {
+                let job_iter = stmt.query_map([], |row| {
+                    Ok(JobLog {
+                        id: row.get(0)?,
+                        repo: row.get(1)?,
+                        log_message: row.get(2)?,
+                        logged_at: row.get(3)?,
+                    })
+                });
+                if let Ok(job_logs_iter) = job_iter {
+                    for job_logs in job_logs_iter {
+                        if let Ok(log) = job_logs {
+                            logs.push(log);
+                        }
+                    }
+                }
             }
+            logs
+        } else {
+            eprintln!("Error: unable to run query");
+            vec![]
         }
-        logs
+    }
+
+    // Fetch logs for a repo (exact match) with optional limit
+    pub fn get_logs_by_repo(repo: &str, limit: usize) -> Vec<JobLog> {
+        if let Ok(sql) = SqliteConnection::new() {
+            let mut logs: Vec<JobLog> = vec![];
+            let base = "SELECT id, repo, log_message, logged_at FROM job_logs WHERE repo = ?1 ORDER BY logged_at DESC";
+            let query = if limit == 0 {
+                base.to_string()
+            } else {
+                format!("{} LIMIT {}", base, limit)
+            };
+            if let Ok(mut stmt) = sql.conn.prepare(&query) {
+                let job_iter = stmt.query_map(params![repo], |row| {
+                    Ok(JobLog {
+                        id: row.get(0)?,
+                        repo: row.get(1)?,
+                        log_message: row.get(2)?,
+                        logged_at: row.get(3)?,
+                    })
+                });
+                if let Ok(job_logs_iter) = job_iter {
+                    for job_logs in job_logs_iter {
+                        if let Ok(log) = job_logs {
+                            logs.push(log);
+                        }
+                    }
+                }
+            }
+            logs
+        } else {
+            eprintln!("Error: unable to run query");
+            vec![]
+        }
     }
 }

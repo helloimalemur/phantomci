@@ -220,23 +220,17 @@ impl Job {
     }
 
     pub fn get_jobs_by_status(status: String) -> Vec<Job> {
-        let mut jobs = Job::get_jobs();
-        for job in jobs.clone() {
-            if job.status == status {
-                jobs.push(job);
-            }
-        }
-        jobs
+        Job::get_jobs()
+            .into_iter()
+            .filter(|job| job.status == status)
+            .collect()
     }
 
     pub fn get_jobs_by_repo(repo: String, branch: String) -> Vec<Job> {
-        let mut jobs = Job::get_jobs();
-        for job in jobs.clone() {
-            if job.repo == repo && job.target_branch == branch {
-                jobs.push(job);
-            }
-        }
-        jobs
+        Job::get_jobs()
+            .into_iter()
+            .filter(|job| job.repo == repo && job.target_branch == branch)
+            .collect()
     }
 }
 

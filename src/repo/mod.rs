@@ -182,7 +182,9 @@ impl Repo {
 
     pub fn git_latest_sha(&mut self, branch: &str) -> Option<String> {
         if let Err(e) = self.fetch_pull() {
-            eprintln!("Error: {}", e)
+            eprintln!("Error: {}", e);
+            // Do not continue if fetch failed; prevent using potentially stale data
+            return None;
         }
         let output = Command::new("git")
             .arg("-C")

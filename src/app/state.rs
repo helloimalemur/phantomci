@@ -9,7 +9,6 @@ use chrono::Local;
 use clap::Parser;
 use rusqlite::Connection;
 use std::collections::HashMap;
-use std::env::args;
 use std::fs;
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -130,11 +129,12 @@ impl AppState {
                     for re in repo.iter() {
                         if re.path.contains(sub) {
                             let jobs = jobs.iter()
-                                .filter(|a| {a.target_branch.eq_ignore_ascii_case(re.target_branch.as_str())})
-                                .filter(|a| {a.repo.eq_ignore_ascii_case(re.path.as_str())})
+                                .filter(|a| a.target_branch.eq_ignore_ascii_case(re.target_branch.as_str()))
+                                .filter(|a| a.repo.eq_ignore_ascii_case(re.path.as_str()))
                                 .cloned()
                                 .collect::<Vec<Job>>();
-                            println!("{} - {} :: {}", re.path, re.target_branch, jobs.last().unwrap().status.as_str());
+                            let status = jobs.last().map(|j| j.status.as_str()).unwrap_or("no jobs");
+                            println!("{} - {} :: {}", re.path, re.target_branch, status);
                         }
                     }
                 }
@@ -145,11 +145,12 @@ impl AppState {
                     let repo = load_repos_from_config(config_dir);
                     for re in repo.iter() {
                         let jobs = jobs.iter()
-                            .filter(|a| {a.target_branch.eq_ignore_ascii_case(re.target_branch.as_str())})
-                            .filter(|a| {a.repo.eq_ignore_ascii_case(re.path.as_str())})
+                            .filter(|a| a.target_branch.eq_ignore_ascii_case(re.target_branch.as_str()))
+                            .filter(|a| a.repo.eq_ignore_ascii_case(re.path.as_str()))
                             .cloned()
                             .collect::<Vec<Job>>();
-                        println!("{} - {} :: {}", re.path, re.target_branch, jobs.last().unwrap().status.as_str());
+                        let status = jobs.last().map(|j| j.status.as_str()).unwrap_or("no jobs");
+                        println!("{} - {} :: {}", re.path, re.target_branch, status);
                     }
                 }
             }
@@ -169,20 +170,39 @@ impl AppState {
                     }
                 }
             }
-            Some(Command::Logs {sub}) => match sub.as_deref() {
-                Some(sub) => {
-                    let logs = JobLog::get_logs();
-                    for log in logs.iter() {
-                        if log.repo.contains(sub) {
-                            println!("{:#?}\n", log);
-                        }
-                    }
+            Some(Command::Logs { sub, repo, branch, limit }) => {
+                // Determine filter precedence: --repo overrides positional sub
+                let repo_filter = repo.or(sub);
+                let mut logs = if let Some(r) = &repo_filter {
+                    JobLog::get_logs_by_repo(r, limit)
+                } else {
+                    JobLog::get_logs_limited(limit)
+                };
+
+                // Optional best-effort branch filter (branch appears inside the log_message)
+                if let Some(br) = &branch {
+                    logs = logs
+                        .into_iter()
+                        .filter(|l| l.log_message.to_lowercase().contains(&format!(":{}", br.to_lowercase())))
+                        .collect();
                 }
-                None => {
-                    let logs = JobLog::get_logs();
-                    for log in logs.iter() {
-                        println!("{:#?}\n", log);
-                    }
+
+                // Pretty print
+                for log in logs.iter() {
+                    let ts = &log.logged_at;
+                    // First line of message only, trimmed
+                    let first_line = log
+                        .log_message
+                        .lines()
+                        .next()
+                        .unwrap_or("")
+                        .trim();
+                    let truncated = if first_line.len() > 160 {
+                        format!("{}…", &first_line[..160])
+                    } else {
+                        first_line.to_string()
+                    };
+                    println!("[{}] {} :: {}", ts, log.repo, truncated);
                 }
             }
         }

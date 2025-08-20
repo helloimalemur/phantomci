@@ -134,10 +134,12 @@ phantom_ci add git@github.com:your/repo main
 phantom_ci configure service
 
 # Inspect state
-phantom_ci repo              # list repos and latest job status
-phantom_ci jobs              # list jobs
-phantom_ci logs              # list logs
-phantom_ci reset             # stop service, clear caches, and restart
+phantom_ci repo                              # list repos and latest job status
+phantom_ci jobs                              # list jobs
+phantom_ci logs                              # list recent logs (default limit 50)
+phantom_ci logs --repo your/repo --limit 20  # filter by repo
+phantom_ci logs --branch main                # filter by branch (best-effort)
+phantom_ci reset                             # stop service, clear caches, and restart
 ```
 
 ---
