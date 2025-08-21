@@ -360,9 +360,9 @@ dependencies = [
 
 [[package]]
 name = "discord-webhook-lib"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e25e7c239f5c58d1378169eea4a1729f8c130fc11110d506f5b528298227313"
+checksum = "af404dfb50497db93c5e66c1bdd6f4eb8f7a5a14b16283e3fa8b105eedfe1e3e"
 dependencies = [
  "anyhow",
  "reqwest",

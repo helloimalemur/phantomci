@@ -12,7 +12,7 @@ anyhow = "1"
 chrono = "0.4"
 clap = { version = "4", features = ["derive"] }
 config = "0.15"
-discord-webhook-lib = "0.2.2"
+discord-webhook-lib = "0.2.3"
 dotenv = "0.15"
 env_logger = "0.11"
 log = "0.4"
