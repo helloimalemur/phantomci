@@ -141,7 +141,7 @@ impl Job {
         let conn = connection.unwrap().conn;
 
         match conn.execute(
-            "UPDATE jobs SET started_at = ?1 WHERE repo = ?2 AND target_branch = ?3",
+            "UPDATE jobs SET start_time = ?1 WHERE repo = ?2 AND target_branch = ?3",
             params![Local::now().to_rfc3339(), repo, target_branch],
         ) {
             Ok(rows_updated) => {
@@ -162,7 +162,7 @@ impl Job {
         let conn = connection.unwrap().conn;
 
         match conn.execute(
-            "UPDATE jobs SET finished_at = ?1 WHERE repo = ?2 AND target_branch = ?3",
+            "UPDATE jobs SET finish_time = ?1 WHERE repo = ?2 AND target_branch = ?3",
             params![Local::now().to_rfc3339(), repo, target_branch],
         ) {
             Ok(rows_updated) => {

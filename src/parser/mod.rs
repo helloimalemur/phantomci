@@ -1,9 +1,11 @@
 use crate::database::joblog::JobLog;
+use crate::database::job::Job;
 use crate::repo::Repo;
 use chrono::Local;
 use config::Config;
 use std::collections::{BTreeMap, HashMap};
 use std::process;
+use std::time::Instant;
 use tokio::sync::mpsc::Sender;
 use whoami::hostname;
 

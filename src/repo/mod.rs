@@ -78,21 +78,6 @@ impl Repo {
         let branch = self.target_branch.clone();
         self.last_sha = self.git_latest_sha(&branch);
 
-        let mut job = Job {
-            id: 0,
-            repo: self.path.clone(),
-            status: "".to_string(),
-            priority: 0,
-            created_at: "".to_string(),
-            updated_at: "".to_string(),
-            start_time: "".to_string(),
-            finish_time: "".to_string(),
-            error_message: "".to_string(),
-            result: "".to_string(),
-            sha: String::from(self.clone().last_sha.unwrap_or_default()),
-            target_branch: self.target_branch.clone(),
-        };
-        job.add_job();
     }
 
     pub async fn send_webhook(&self, message: String, repo: &Repo) {
@@ -186,6 +171,11 @@ impl Repo {
             // Do not continue if fetch failed; prevent using potentially stale data
             return None;
         }
+        let cmd_desc = format!(
+            "git -C {} rev-parse origin/{}",
+            &self.work_dir,
+            branch
+        );
         let output = Command::new("git")
             .arg("-C")
             .arg(&self.work_dir)
@@ -198,11 +188,18 @@ impl Repo {
                 Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
             }
             Ok(output) => {
-                eprintln!("Error: scm polling error: {:?}", output);
+                let code = output.status.code().unwrap_or(-1);
+                eprintln!(
+                    "git rev-parse failed (exit code {})\ncommand: {}\nstderr: {}\nstdout: {}",
+                    code,
+                    cmd_desc,
+                    String::from_utf8_lossy(&output.stderr),
+                    String::from_utf8_lossy(&output.stdout)
+                );
                 None
             }
-            _ => {
-                eprintln!("Error: scm polling error: {}", self.name);
+            Err(err) => {
+                eprintln!("Failed to execute {}: {}", cmd_desc, err);
                 None
             }
         }
@@ -267,9 +264,14 @@ impl Repo {
             .arg("--prune")
             .output()?;
         if !out.status.success() {
+            let code = out.status.code().unwrap_or(-1);
+            let cmd_desc = format!("git -C {} fetch --all --prune", &self.work_dir);
             anyhow::bail!(
-                "git fetch failed: {}",
-                String::from_utf8_lossy(&out.stderr)
+                "git fetch failed (exit code {})\ncommand: {}\nstderr: {}\nstdout: {}",
+                code,
+                cmd_desc,
+                String::from_utf8_lossy(&out.stderr),
+                String::from_utf8_lossy(&out.stdout)
             );
         }
         Ok(())
@@ -303,19 +305,43 @@ impl Repo {
             .map(|p| p.to_path_buf())
             .unwrap_or_else(|| Path::new("/").to_path_buf());
 
-        if let Ok(_output) = Command::new("git")
+        match Command::new("git")
             .arg("-C")
-            .arg(parent)
+            .arg(&parent)
             .arg("clone")
             .arg(&self.path)
             .arg(&self.work_dir) // explicitly clone into target dir
             .output()
         {
-            let git_repo_path = format!("{}/.git", self.work_dir);
-            if Path::new(&git_repo_path).exists() {
-                println!("Cloned successfully: {}", self.path);
-            } else {
-                println!("Failed to clone: {}", self.path);
+            Ok(output) => {
+                let git_repo_path = format!("{}/.git", self.work_dir);
+                if output.status.success() && Path::new(&git_repo_path).exists() {
+                    let code = output.status.code().unwrap_or(0);
+                    println!("git clone succeeded (exit code {}): {}", code, self.path);
+                } else {
+                    let code = output.status.code().unwrap_or(-1);
+                    eprintln!(
+                        "git clone failed (exit code {}) for {}\ncommand: git -C {} clone {} {}\nstderr: {}\nstdout: {}",
+                        code,
+                        self.path,
+                        parent.display(),
+                        self.path,
+                        self.work_dir,
+                        String::from_utf8_lossy(&output.stderr),
+                        String::from_utf8_lossy(&output.stdout)
+                    );
+                    let _ = fs::remove_dir_all(Path::new(&self.work_dir));
+                }
+            }
+            Err(err) => {
+                eprintln!(
+                    "Failed to execute git clone for {}: {}\ncommand: git -C {} clone {} {}",
+                    self.path,
+                    err,
+                    parent.display(),
+                    self.path,
+                    self.work_dir
+                );
                 let _ = fs::remove_dir_all(Path::new(&self.work_dir));
             }
         }
@@ -324,7 +350,8 @@ impl Repo {
     fn get_default_branch(&mut self) -> String {
         let mut head_branch = "master".to_string();
 
-        if let Ok(output) = Command::new("git")
+        let cmd_desc = format!("git -C {} remote show origin", &self.work_dir);
+        match Command::new("git")
             .arg("-C")
             .arg(&self.work_dir)
             .arg("remote")
@@ -332,21 +359,30 @@ impl Repo {
             .arg("origin")
             .output()
         {
-            if output.status.success() {
-                let stdout = String::from_utf8_lossy(&output.stdout);
-                if let Some(s) = stdout
-                    .lines()
-                    .find(|l| l.contains("HEAD branch:"))
-                    .map(|l| l.replace("HEAD branch:", ""))
-                {
-                    head_branch = s.trim().to_string();
-                    println!("Default branch: {}", head_branch);
+            Ok(output) => {
+                if output.status.success() {
+                    let stdout = String::from_utf8_lossy(&output.stdout);
+                    if let Some(s) = stdout
+                        .lines()
+                        .find(|l| l.contains("HEAD branch:"))
+                        .map(|l| l.replace("HEAD branch:", ""))
+                    {
+                        head_branch = s.trim().to_string();
+                        println!("Default branch: {}", head_branch);
+                    }
+                } else {
+                    let code = output.status.code().unwrap_or(-1);
+                    eprintln!(
+                        "git remote show origin failed (exit code {})\ncommand: {}\nstderr: {}\nstdout: {}",
+                        code,
+                        cmd_desc,
+                        String::from_utf8_lossy(&output.stderr),
+                        String::from_utf8_lossy(&output.stdout)
+                    );
                 }
-            } else {
-                eprintln!(
-                    "git remote show origin failed: {}",
-                    String::from_utf8_lossy(&output.stderr)
-                );
+            }
+            Err(err) => {
+                eprintln!("Failed to execute {}: {}", cmd_desc, err);
             }
         }
 
