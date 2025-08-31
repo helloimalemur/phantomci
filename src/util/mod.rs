@@ -19,7 +19,7 @@ pub fn default_repo_work_path_remove_cache_data() {
             true => "/root/.cache/phantom_ci/".to_string(),
             false => {
                 if let Ok(user) = whoami::username() {
-                    user
+                    format!("/home/{}/.cache/phantom_ci/", user)
                 } else {
                     panic!("unable to determine user name");
                 }

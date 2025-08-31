@@ -50,10 +50,9 @@ impl SqliteConnection {
         if let Err(e) = self.conn.execute(
             "CREATE TABLE IF NOT EXISTS job_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            repo INTEGER NOT NULL,             -- Foreign key reference to the jobs table
+            repo TEXT NOT NULL,             -- Repo identifier (matches jobs.repo)
             log_message TEXT NOT NULL,           -- Log message content
-            logged_at DATETIME DEFAULT CURRENT_TIMESTAMP,  -- When this log was recorded
-            FOREIGN KEY(repo) REFERENCES jobs(repo) ON DELETE CASCADE
+            logged_at DATETIME DEFAULT CURRENT_TIMESTAMP  -- When this log was recorded
         )",
             (),
         ) {
