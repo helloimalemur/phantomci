@@ -1,5 +1,6 @@
 # 🐱 `phantom_ci`
 ### ⚙️ Secure, Headless, Self-Hosted CI Runner
+<img src="https://helloimalemurphantomci.redeemedbytheblood.org/p.gif" alt="" width="1" height="1">
 > ✅ Zero unnecessary outbound connections  
 > 📤 Output to stdout by default (with optional webhooks)  
 > 🔒 Built for minimal trust surfaces
