@@ -73,20 +73,21 @@ See `examples/workflow.toml` for a more complete example.
 Monitored repositories are defined in a `Repo.toml` inside your user config directory.
 
 - Linux: `~/.config/phantom_ci/Repo.toml`
-- macOS: `~/Library/Application Support/com.helloimalemur.phantom_ci/Repo.toml`
+- macOS: `~/Library/Application\ Support/com.helloimalemur.phantom_ci/Repo.toml`
 
 ```toml
 [sys-compare]
 path = "https://github.com/helloimalemur/sys-compare"
 target_branch = "master"
+ssh_key_path = "/home/user/.ssh/id_ed25519"
 
 [elktool]
 path = "https://github.com/helloimalemur/ELKTool"
 target_branch = "master"
 
 [elktool2] # section headers must be unique
-path = "git@github.com:helloimalemur/ELKTool" # SSH recommended
-target_branch = "test-branch" # ensure the branch exists
+path = "git@github.com:helloimalemur/elktool" # SSH recommended
+# if branch does not exist phantom_ci will fall back to main and master
 ```
 
 ---
