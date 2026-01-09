@@ -9,4 +9,4 @@ data:
     path = "git@github.com:your/repo"
     target_branch = "main"
     # Optional: explicit key path (the app also sets GIT_SSH_COMMAND)
-    ssh_key_path = "/root/.ssh/id_rsa"
+    ssh_key_path = "/root/.ssh/id_ed25519"

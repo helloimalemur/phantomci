@@ -23,6 +23,8 @@ spec:
           #     value: "https://discord.com/api/webhooks/..."
           #   - name: SLACK_WEBHOOK_URL
           #     value: "https://hooks.slack.com/services/..."
+          #   - name: CUSTOM_WEBHOOK_URL
+          #     value: "https://10.0.0.7/my/internal/api/..."
           volumeMounts:
             - name: config
               mountPath: /root/.config/phantom_ci
@@ -56,7 +58,7 @@ spec:
             secretName: phantomci-ssh
             defaultMode: 0400
             items:
-              - key: id_rsa
-                path: id_rsa
+              - key: id_ed25519
+                path: id_ed25519
         - name: cache
           emptyDir: {}

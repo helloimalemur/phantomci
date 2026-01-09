@@ -1,7 +1,7 @@
 FROM rust:bookworm
 
 # Use the key at runtime by default, disable host key checking for automation
-ENV GIT_SSH_COMMAND="ssh -i /root/.ssh/id_rsa -o StrictHostKeyChecking=no"
+ENV GIT_SSH_COMMAND="ssh -i /root/.ssh/id_ed25519 -o StrictHostKeyChecking=no"
 
 # Ensure needed tools exist at runtime
 RUN apt-get update \
@@ -11,20 +11,20 @@ RUN apt-get update \
 # Prepare SSH directory and generate a fallback key (can be overridden below)
 RUN mkdir -p /root/.ssh \
     && chmod 700 /root/.ssh \
-    && ssh-keygen -t rsa -b 4096 -f /root/.ssh/id_rsa -P ""
+    && ssh-keygen -t ed25519 -f /root/.ssh/id_ed25519 -P ""
 
 WORKDIR /phantom_ci
 COPY . .
 
 # Optional: placeholder keys copied into /root/keys (used only if non-empty)
-COPY docker/key /root/keys/id_rsa
-COPY docker/key.pub /root/keys/id_rsa.pub
+COPY docker/key /root/keys/id_ed25519
+COPY docker/key.pub /root/keys/id_ed25519.pub
 
 # Use provided keys only if they are non-empty (fix inverted logic)
-RUN if (( $(stat -c%s /root/keys/id_rsa) > 5 )); then cp /root/keys/id_rsa /root/.ssh/id_rsa; fi \
- && if (( $(stat -c%s /root/keys/id_rsa.pub) > 5 )); then cp /root/keys/id_rsa.pub /root/.ssh/id_rsa.pub; fi \
- && chmod 600 /root/.ssh/id_rsa \
- && [ -f /root/.ssh/id_rsa.pub ] && chmod 644 /root/.ssh/id_rsa.pub || true \
+RUN if (( $(stat -c%s /root/keys/id_ed25519) > 5 )); then cp /root/keys/id_ed25519 /root/.ssh/id_ed25519; fi \
+ && if (( $(stat -c%s /root/keys/id_ed25519.pub) > 5 )); then cp /root/keys/id_ed25519.pub /root/.ssh/id_ed25519.pub; fi \
+ && chmod 600 /root/.ssh/id_ed25519 \
+ && [ -f /root/.ssh/id_ed25519.pub ] && chmod 644 /root/.ssh/id_ed25519.pub || true \
  && chown -R root:root /root/.ssh
 
 # Install the binary into PATH
