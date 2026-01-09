@@ -226,6 +226,15 @@ impl Repo {
             ));
             webhook.send().await;
         }
+        if let Ok(custom_url) = env::var("CUSTOM_WEBHOOK_URL") {
+            let webhook = Webhook::new(WebhookConfig::new(
+                title,
+                custom_url.as_str(),
+                WebhookType::Custom,
+                &message,
+            ));
+            webhook.send().await;
+        }
     }
 
     pub fn check_repo_changes(&mut self) {

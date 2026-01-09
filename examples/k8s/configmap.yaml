@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: phantomci-config
+  namespace: phantomci
+data:
+  Repo.toml: |
+    [your-repo]
+    path = "git@github.com:your/repo"
+    target_branch = "main"
+    # Optional: explicit key path (the app also sets GIT_SSH_COMMAND)
+    ssh_key_path = "/root/.ssh/id_rsa"

@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: phantomci
+  namespace: phantomci
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: phantomci
+  template:
+    metadata:
+      labels:
+        app: phantomci
+    spec:
+      containers:
+        - name: phantomci
+          image: your-registry/phantomci:0.2.1
+          imagePullPolicy: IfNotPresent
+          # Optional webhook configuration
+          # env:
+          #   - name: DISCORD_WEBHOOK_URL
+          #     value: "https://discord.com/api/webhooks/..."
+          #   - name: SLACK_WEBHOOK_URL
+          #     value: "https://hooks.slack.com/services/..."
+          volumeMounts:
+            - name: config
+              mountPath: /root/.config/phantom_ci
+            - name: repo-config
+              mountPath: /root/.config/phantom_ci/Repo.toml
+              subPath: Repo.toml
+            - name: ssh-key
+              mountPath: /root/.ssh
+              readOnly: true
+            - name: cache
+              mountPath: /root/.cache/phantom_ci
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: phantomci-config-pvc
+        - name: repo-config
+          configMap:
+            name: phantomci-config
+            items:
+              - key: Repo.toml
+                path: Repo.toml
+        - name: ssh-key
+          secret:
+            secretName: phantomci-ssh
+            defaultMode: 0400
+            items:
+              - key: id_rsa
+                path: id_rsa
+        - name: cache
+          emptyDir: {}

@@ -87,7 +87,7 @@ target_branch = "master"
 
 [elktool2] # section headers must be unique
 path = "git@github.com:helloimalemur/elktool" # SSH recommended
-# if branch does not exist phantom_ci will fall back to main and master
+# if branch does not exist phantom_ci will attempt to determine the default branch before eventually trying master
 ```
 
 ---
@@ -105,7 +105,7 @@ Supported variables:
 # Discord
 DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..."
 
-# Slack
+# Slack 
 SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..."
 ```
 
