@@ -1,0 +1,72 @@
+name: Release binaries
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system deps (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsqlite3-dev pkg-config
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build (release)
+        run: cargo build --release --locked
+
+      - name: Package artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          BIN_NAME="phantom_ci"
+          VERSION="${GITHUB_REF_NAME}"
+          OUT_DIR="dist"
+          mkdir -p "$OUT_DIR"
+
+          # Copy the built binary
+          cp "target/release/${BIN_NAME}" "$OUT_DIR/${BIN_NAME}"
+
+          # Normalize OS label and capture arch
+          if [[ "${RUNNER_OS}" == "macOS" ]]; then
+            OS_LABEL="macos"
+          elif [[ "${RUNNER_OS}" == "Linux" ]]; then
+            OS_LABEL="linux"
+          else
+            OS_LABEL="${RUNNER_OS}"
+          fi
+          ARCH="$(uname -m)"
+
+          ARCHIVE_NAME="${BIN_NAME}-${VERSION}-${OS_LABEL}-${ARCH}.tar.gz"
+          (cd "$OUT_DIR" && tar -czf "$ARCHIVE_NAME" "$BIN_NAME")
+          echo "TAR_PATH=${OUT_DIR}/${ARCHIVE_NAME}" >> "$GITHUB_ENV"
+
+      - name: Upload asset to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.TAR_PATH }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
