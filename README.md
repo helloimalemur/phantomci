@@ -105,8 +105,11 @@ Supported variables:
 # Discord
 DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..."
 
-# Slack 
+# Slack
 SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..."
+
+# Custom
+CUSTOM_WEBHOOK_URL="https://10.0.0.7/my/internal/api/..."
 ```
 
 ---
