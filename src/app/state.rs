@@ -49,7 +49,7 @@ impl AppState {
             if let Ok(c) = SqliteConnection::new() {
                 let mut state = AppState {
                     repos: Arc::new(Mutex::new(HashMap::new())),
-                    scm_internal: 15,
+                    scm_internal: 60,
                     db_conn: Some(Arc::new(Mutex::new(c.conn))),
                 };
                 state.process_arguments(config_dir.as_str());
