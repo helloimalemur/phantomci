@@ -281,7 +281,7 @@ mod tests {
 
     #[test]
     pub fn update_sha() {
-        let repo = "git@code.koonts.net:helloimalemur/testing".to_string();
+        let repo = "git@code.koonts.net:helloimalemur/phantomci".to_string();
         let target_branch = "main".to_string();
         let sha = "test".to_string();
 
