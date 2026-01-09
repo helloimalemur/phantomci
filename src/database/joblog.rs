@@ -27,6 +27,7 @@ impl JobLog {
     }
 
     // Fetch all logs ordered by newest first
+    #[allow(dead_code)]
     pub fn get_logs() -> Vec<JobLog> {
         if let Ok(sql) = SqliteConnection::new() {
             let mut logs: Vec<JobLog> = vec![];
@@ -44,11 +45,7 @@ impl JobLog {
                 });
 
                 if let Ok(job_logs_iter) = job_iter {
-                    for job_logs in job_logs_iter {
-                        if let Ok(log) = job_logs {
-                            logs.push(log);
-                        }
-                    }
+                    logs.extend(job_logs_iter.flatten());
                 }
             }
 
@@ -81,11 +78,7 @@ impl JobLog {
                     })
                 });
                 if let Ok(job_logs_iter) = job_iter {
-                    for job_logs in job_logs_iter {
-                        if let Ok(log) = job_logs {
-                            logs.push(log);
-                        }
-                    }
+                    logs.extend(job_logs_iter.flatten());
                 }
             }
             logs
@@ -115,11 +108,7 @@ impl JobLog {
                     })
                 });
                 if let Ok(job_logs_iter) = job_iter {
-                    for job_logs in job_logs_iter {
-                        if let Ok(log) = job_logs {
-                            logs.push(log);
-                        }
-                    }
+                    logs.extend(job_logs_iter.flatten());
                 }
             }
             logs

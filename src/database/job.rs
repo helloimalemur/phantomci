@@ -27,7 +27,9 @@ pub struct Job {
     pub repo: String,
     pub status: String,
     pub priority: i32,
+    #[allow(dead_code)]
     pub created_at: String,
+    #[allow(dead_code)]
     pub updated_at: String,
     pub start_time: String,
     pub finish_time: String,
@@ -42,33 +44,23 @@ impl Job {
         let connection = SqliteConnection::new();
         let conn = connection.unwrap().conn;
 
-        match Job::check_exists(String::from(self.clone().repo), String::from(self.clone().target_branch)) {
-            false => {
-                match conn.execute(
-                    "INSERT INTO jobs (repo, status, priority, created_at, updated_at, start_time, finish_time, error_message, result, sha, target_branch) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
-                    params![self.repo, self.status, self.priority, Local::now().to_rfc3339(), Local::now().to_rfc3339(), self.start_time, self.finish_time, self.error_message, self.result, self.sha, self.target_branch],
-                ) {
-                    Ok(_) =>
-                        println!("Added successfully")
-                    ,
-                    Err(error) => {
-                        println!("{}", error)
-                    }
+        if !Job::check_exists(self.repo.clone(), self.target_branch.clone()) {
+            match conn.execute(
+                "INSERT INTO jobs (repo, status, priority, created_at, updated_at, start_time, finish_time, error_message, result, sha, target_branch) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+                params![self.repo, self.status, self.priority, Local::now().to_rfc3339(), Local::now().to_rfc3339(), self.start_time, self.finish_time, self.error_message, self.result, self.sha, self.target_branch],
+            ) {
+                Ok(_) => println!("Added successfully"),
+                Err(error) => {
+                    println!("{}", error)
                 }
             }
-            _ => {}
         }
     }
 
     pub fn check_exists(repo: String, branch: String) -> bool {
-        let mut contained = false;
-        let jobs = Job::get_jobs();
-        for job in jobs {
-            if job.repo == repo && job.target_branch == branch {
-                contained = true;
-            }
-        }
-        contained
+        Job::get_jobs()
+            .into_iter()
+            .any(|job| job.repo == repo && job.target_branch == branch)
     }
 
     pub fn update_sha(repo: String, target_branch: String, sha: String) {
@@ -204,11 +196,7 @@ impl Job {
                 });
 
                 if let Ok(job_iter) = job_iter {
-                    for job in job_iter {
-                        if let Ok(job) = job {
-                            jobs.push(job);
-                        }
-                    }
+                    jobs.extend(job_iter.flatten());
                 }
             }
 
@@ -219,6 +207,7 @@ impl Job {
         }
     }
 
+    #[allow(dead_code)]
     pub fn get_jobs_by_status(status: String) -> Vec<Job> {
         Job::get_jobs()
             .into_iter()
@@ -281,7 +270,7 @@ mod tests {
 
     #[test]
     pub fn update_sha() {
-        let repo = "git@code.koonts.net:helloimalemur/phantomci".to_string();
+        let repo = "git@code.koonts.net:helloimalemur/phantom_ci".to_string();
         let target_branch = "main".to_string();
         let sha = "test".to_string();
 

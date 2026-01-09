@@ -34,6 +34,16 @@ pub struct AppState {
 }
 
 impl AppState {
+
+}
+
+impl Default for AppState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl AppState {
     pub fn new() -> Self {
         if let Some(config_dir) = default_config_path() {
             if let Ok(c) = SqliteConnection::new() {
@@ -68,14 +78,13 @@ impl AppState {
                 path: Some(repo_path),
                 branch: Some(branch_name),
             }) => {
-                if branch_name.len() == 0 {
+                if branch_name.is_empty() {
                     println!("Branch name is empty");
                 }
                 if !repo_path.is_empty() {
                     let repo_name_only = repo_path
-                        .split('/')
-                        .last()
-                        .to_owned()
+                        .rsplit('/')
+                        .next()
                         .unwrap_or("0")
                         .to_string();
                     println!("Adding repo: {}", &repo_name_only);
@@ -181,10 +190,11 @@ impl AppState {
 
                 // Optional best-effort branch filter (branch appears inside the log_message)
                 if let Some(br) = &branch {
-                    logs = logs
-                        .into_iter()
-                        .filter(|l| l.log_message.to_lowercase().contains(&format!(":{}", br.to_lowercase())))
-                        .collect();
+                    let br_lc = br.to_lowercase();
+                    logs.retain(|l| l
+                        .log_message
+                        .to_lowercase()
+                        .contains(&format!(":{}", br_lc)));
                 }
 
                 // Pretty print
@@ -228,7 +238,7 @@ impl AppState {
         }
 
         if let Ok(s) = self.repos.lock() {
-            if s.len() > 0 {
+            if !s.is_empty() {
                 println!(
                     "Restored state:\n      repo: {}\n      path: {}\n",
                     s.len(),
@@ -287,9 +297,7 @@ impl AppState {
 
     pub fn add_repo_to_state(&mut self, repo_name: String, repo: Repo) {
         if let Ok(mut s) = self.repos.lock() {
-            if !s.contains_key(&repo_name) {
-                s.insert(repo_name, repo);
-            }
+            s.entry(repo_name).or_insert(repo);
         }
     }
 
@@ -305,7 +313,7 @@ impl AppState {
 
         self.add_repos_from_config();
 
-        let interval_duration = Duration::new(self.scm_internal.clone(), 0);
+        let interval_duration = Duration::new(self.scm_internal, 0);
         let mut ticker = interval(interval_duration);
         #[allow(unused)]
         let (mut tx, mut rx) = tokio::sync::mpsc::channel::<String>(100);
@@ -367,7 +375,9 @@ pub fn save_state(app_state: SerializedState) {
     let path_old = get_previous_state_path();
 
     let mut dir_only = path.to_owned();
-    dir_only = dir_only.replace(path.split('/').last().unwrap(), "");
+    if let Some(tail) = path.rsplit('/').next() {
+        dir_only = dir_only.replace(tail, "");
+    }
 
     if let Err(_e) = fs::create_dir_all(Path::new(dir_only.as_str())) {
         // println!("{:?}", e)
