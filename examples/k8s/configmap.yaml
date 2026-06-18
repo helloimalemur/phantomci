@@ -7,6 +7,9 @@ data:
   Repo.toml: |
     [your-repo]
     path = "git@github.com:your/repo"
-    target_branch = "main"
+    target_branch = ""
+    # branch_exclusions only functions when target_branch is empty or missing
+    branch_exclusions = "main,dev"
     # Optional: explicit key path (the app also sets GIT_SSH_COMMAND)
     ssh_key_path = "/root/.ssh/id_ed25519"
+      

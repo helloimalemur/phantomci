@@ -29,12 +29,13 @@ This project was built with **isolation and security** in mind — specifically 
 
 ## 🛡️ Security Posture
 
-- Workflows are only run from a **locally configured branch** (`target_branch`).
+- Workflows are only run from a **locally configured branch** (`target_branch`) or any branch if left empty.
 - Branch execution config is stored **outside the repo**, reducing tampering risk.
 - CLI-based only — no API, no sockets, no network listeners.
 - Workflow steps are executed via `std::process::Command`.
 
-Default `target_branch` is `master` — configure this explicitly and enforce restrictions via Git to avoid unauthorized command execution.
+If `target_branch` is empty or missing, all branches will be monitored, excluding any listed in `branch_exclusions`.
+Default `target_branch` is master if configured via CLI — when manually editing `Repo.toml`, omitting it allows any branch to trigger.
 
 ---
 
@@ -76,9 +77,10 @@ Monitored repositories are defined in a `Repo.toml` inside your user config dire
 - macOS: `~/Library/Application\ Support/com.helloimalemur.phantom_ci/Repo.toml`
 
 ```toml
-[sys-compare]
-path = "https://github.com/helloimalemur/sys-compare"
-target_branch = "master"
+[your-repo]
+path = "git@github.com:helloimalemur/sys-compare"
+target_branch = ""
+branch_exclusions = "main,dev"
 ssh_key_path = "/home/user/.ssh/id_ed25519"
 
 [elktool]

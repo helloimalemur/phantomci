@@ -94,7 +94,6 @@ impl AppState {
                         default_repo_work_path(repo_name_only.clone()).unwrap(),
                         None,
                         branch_name,
-                        false,
                     )
                     .write_repo_to_config();
                 }

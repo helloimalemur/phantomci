@@ -17,6 +17,7 @@ use tokio::sync::mpsc::Sender;
 trait GitClient {
     fn has_remote_branch(&self, work_dir: &str, branch: &str) -> bool;
     fn remote_default_branch(&self, work_dir: &str) -> Option<String>;
+    fn remote_branches(&self, work_dir: &str) -> Vec<String>;
 }
 
 struct SystemGitClient {}
@@ -58,6 +59,32 @@ impl GitClient for SystemGitClient {
             _ => None,
         }
     }
+
+    fn remote_branches(&self, work_dir: &str) -> Vec<String> {
+        match Command::new("git")
+            .arg("-C")
+            .arg(work_dir)
+            .arg("branch")
+            .arg("-r")
+            .output()
+        {
+            Ok(output) if output.status.success() => {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                stdout
+                    .lines()
+                    .filter_map(|l| {
+                        let trimmed = l.trim();
+                        if trimmed.is_empty() || trimmed.contains("->") {
+                            None
+                        } else {
+                            Some(trimmed.replace("origin/", ""))
+                        }
+                    })
+                    .collect()
+            }
+            _ => vec![],
+        }
+    }
 }
 
 // Struct to represent a repository
@@ -68,8 +95,9 @@ pub struct Repo {
     pub work_dir: String,
     pub last_sha: Option<String>,
     pub target_branch: String,
-    pub triggered: bool,
+    pub triggered_branches: Vec<String>,
     pub ssh_key_path: Option<String>,
+    pub branch_exclusions: Option<String>,
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
@@ -77,6 +105,7 @@ pub struct Repos {
     pub path: String,
     pub target_branch: Option<String>,
     pub ssh_key_path: Option<String>,
+    pub branch_exclusions: Option<String>,
 }
 
 impl Default for Repo {
@@ -86,9 +115,10 @@ impl Default for Repo {
             path: "".to_string(),
             work_dir: "".to_string(),
             last_sha: None,
-            target_branch: "master".to_string(),
-            triggered: false,
+            target_branch: "".to_string(),
+            triggered_branches: vec![],
             ssh_key_path: None,
+            branch_exclusions: None,
         }
     }
 }
@@ -100,7 +130,6 @@ impl Repo {
         work_dir: String,
         last_sha: Option<String>,
         target_branch: String,
-        triggered: bool,
     ) -> Repo {
         Repo {
             name,
@@ -108,8 +137,9 @@ impl Repo {
             work_dir,
             last_sha,
             target_branch,
-            triggered,
+            triggered_branches: vec![],
             ssh_key_path: None,
+            branch_exclusions: None,
         }
     }
 
@@ -136,15 +166,12 @@ impl Repo {
             self.get_default_branch();
         }
 
-        // If target branch is empty (e.g., not specified in config), resolve via remote default now
-        if self.target_branch.is_empty() {
-            let git = SystemGitClient {};
-            let _ = self.resolve_effective_branch_with("", &git);
+        // Only resolve branch if target_branch is not empty
+        // If it's empty, we monitor all branches and don't want to fix it to one here.
+        if !self.target_branch.is_empty() {
+            let branch = self.target_branch.clone();
+            self.last_sha = self.git_latest_sha(&branch);
         }
-
-        let branch = self.target_branch.clone();
-        self.last_sha = self.git_latest_sha(&branch);
-
     }
 
     // Resolve an effective branch based on a preferred branch name and remote state.
@@ -238,59 +265,88 @@ impl Repo {
     }
 
     pub fn check_repo_changes(&mut self) {
-        let branch = self.target_branch.clone();
-        if let Some(latest_sha) = self.git_latest_sha(&branch) {
+        if self.target_branch.is_empty() {
+            let git = SystemGitClient {};
+            if let Err(e) = self.fetch_pull() {
+                eprintln!("Error during git fetch for {}: {}", self.path, e);
+                return;
+            }
+            let branches = git.remote_branches(&self.work_dir);
+            let exclusions: Vec<String> = self.branch_exclusions.as_ref()
+                .map(|s| s.split(',').map(|s| s.trim().to_string()).collect())
+                .unwrap_or_default();
+
+            for branch in branches {
+                if exclusions.contains(&branch) {
+                    continue;
+                }
+                self.check_branch_changes(&branch);
+            }
+        } else {
+            let branch = self.target_branch.clone();
+            self.check_branch_changes(&branch);
+        }
+    }
+
+    fn check_branch_changes(&mut self, branch: &str) {
+        if let Some(latest_sha) = self.git_latest_sha(branch) {
             // read last known SHA from DB (empty string if none)
-            let last_sha = self.get_sha_by_repo();
+            let last_sha = self.get_sha_by_repo(branch);
 
             if last_sha.is_empty() {
                 // first-time initialization
-                self.set_sha_by_repo(latest_sha.clone());
-                self.last_sha = Some(latest_sha);
+                self.set_sha_by_repo(branch, latest_sha.clone());
+                if self.target_branch == branch || self.target_branch.is_empty() {
+                    self.last_sha = Some(latest_sha);
+                }
                 return;
             }
 
             if last_sha != latest_sha {
                 // Persist the new SHA first
-                self.set_sha_by_repo(latest_sha.clone());
+                self.set_sha_by_repo(branch, latest_sha.clone());
 
-                // Ensure working copy is updated to the latest remote state for the target branch
-                if let Err(e) = self.pull_branch() {
-                    eprintln!(
-                        "Failed to update working tree for {} on {}: {}",
-                        self.path, self.target_branch, e
-                    );
+                // Mark branch as triggered
+                self.triggered_branches.push(branch.to_string());
+                if self.target_branch == branch || self.target_branch.is_empty() {
+                    self.last_sha = Some(latest_sha.clone());
                 }
-
-                // Mark job running and trigger workflow processing
-                Job::update_status(
-                    self.path.clone(),
-                    self.target_branch.clone(),
-                    "running".to_string(),
-                );
-                self.triggered = true;
-                self.last_sha = Some(latest_sha.clone());
 
                 println!("========================================================");
                 println!("{}", Local::now().format("%Y-%m-%d %H:%M:%S"));
                 println!(
-                    "Change detected in repo: {}\nNew SHA: {}",
-                    self.path, latest_sha
+                    "Change detected in repo: {} [branch: {}]\nNew SHA: {}",
+                    self.path, branch, latest_sha
                 );
                 println!("========================================================");
             }
-        } else {
-            eprintln!("Failed to fetch latest SHA for repo at {}", self.path);
         }
     }
 
     // Check for changes in a repository and handle them
     pub async fn check_repo_triggered(&mut self, tx_clone: Sender<String>) {
-        if self.triggered {
-            Job::update_start_time(self.path.clone(), self.target_branch.clone());
+        let branches = self.triggered_branches.clone();
+        self.triggered_branches.clear();
+
+        for branch in branches {
+            Job::update_start_time(self.path.clone(), branch.clone());
+
+            // Ensure working copy is updated to the latest remote state for the branch
+            if let Err(e) = self.pull_branch(&branch) {
+                eprintln!(
+                    "Failed to update working tree for {} on {}: {}",
+                    self.path, branch, e
+                );
+            }
+
+            // Mark job running and trigger workflow processing
+            Job::update_status(
+                self.path.clone(),
+                branch.clone(),
+                "running".to_string(),
+            );
 
             // Parse workflow file
-            self.triggered = false;
             let repo_name = self
                 .path
                 .rsplit('/')
@@ -298,11 +354,15 @@ impl Repo {
                 .unwrap_or("")
                 .to_string();
             if let Some(base) = default_repo_work_path(repo_name) {
-                let wp = format!("{}/workflow/{}.toml", base, self.target_branch);
+                let wp = format!("{}/workflow/{}.toml", base, branch);
                 let workflow_path = Path::new(&wp);
                 if workflow_path.exists() {
                     if let Some(wp_str) = workflow_path.to_str() {
-                        parse_workflow(wp_str, self.to_owned(), tx_clone).await;
+                        // Temporarily set target_branch so parse_workflow uses the correct one if needed
+                        let old_target = self.target_branch.clone();
+                        self.target_branch = branch.clone();
+                        parse_workflow(wp_str, self.to_owned(), tx_clone.clone()).await;
+                        self.target_branch = old_target;
                     } else {
                         eprintln!("Invalid workflow path");
                     }
@@ -435,34 +495,15 @@ impl Repo {
         Ok(())
     }
 
-    // Ensure local working copy reflects the latest remote state for the target branch
-    pub fn pull_branch(&mut self) -> Result<(), anyhow::Error> {
-        // Resolve branch to pull (preferred target_branch or remote default)
-        let git = SystemGitClient {};
-        let preferred = self.target_branch.clone();
-        let resolved = self.resolve_effective_branch_with(&preferred, &git);
-        let branch = match resolved {
-            Some(b) => b,
-            None => {
-                eprintln!(
-                    "Unable to resolve branch to pull for {}; neither preferred nor remote default exists",
-                    self.path
-                );
-                return Ok(());
-            }
-        };
-
-        // Always fetch first to ensure remote refs are up to date
-        let _ = self.fetch_pull();
-
+    pub fn pull_branch(&mut self, branch: &str) -> Result<(), anyhow::Error> {
         // Ensure the local branch exists and is set to track the remote branch
         let checkout_output = Command::new("git")
             .arg("-C")
             .arg(&self.work_dir)
             .arg("checkout")
             .arg("-B")
-            .arg(&branch)
-            .arg(format!("origin/{}", &branch))
+            .arg(branch)
+            .arg(format!("origin/{}", branch))
             .output()?;
         if !checkout_output.status.success() {
             eprintln!(
@@ -481,7 +522,7 @@ impl Repo {
             .arg("pull")
             .arg("--ff-only")
             .arg("origin")
-            .arg(&branch)
+            .arg(branch)
             .output()?;
         if !pull_output.status.success() {
             eprintln!(
@@ -498,7 +539,7 @@ impl Repo {
                 .arg(&self.work_dir)
                 .arg("reset")
                 .arg("--hard")
-                .arg(format!("origin/{}", &branch))
+                .arg(format!("origin/{}", branch))
                 .output()?;
             if !reset_output.status.success() {
                 let code = reset_output.status.code().unwrap_or(-1);
@@ -633,17 +674,12 @@ impl Repo {
             }
         }
 
-        if self.target_branch.is_empty() {
-            self.target_branch = head_branch.to_owned();
-        }
-
         head_branch
     }
 
-    fn get_sha_by_repo(&self) -> String {
+    fn get_sha_by_repo(&self, branch: &str) -> String {
         let repo = String::from(&self.path);
-        let branch = String::from(&self.target_branch);
-        let jobs = Job::get_jobs_by_repo(repo, branch);
+        let jobs = Job::get_jobs_by_repo(repo, branch.to_string());
         let mut sha = String::new();
         for job in jobs {
             sha = job.sha;
@@ -651,10 +687,10 @@ impl Repo {
         sha
     }
 
-    fn set_sha_by_repo(&self, latest_sha: String) {
+    fn set_sha_by_repo(&self, branch: &str, latest_sha: String) {
         Job::update_sha(
             String::from(&self.path),
-            self.target_branch.clone(),
+            branch.to_string(),
             latest_sha.clone(),
         );
     }
@@ -680,11 +716,12 @@ pub fn load_repos_from_config(config_dir: &str) -> Vec<Repo> {
                         .to_owned()
                         .target_branch
                         .unwrap_or("".to_string()),
-                    triggered: false,
+                    triggered_branches: vec![],
                     ssh_key_path: r.1.ssh_key_path.clone().and_then(|s| {
                         let t = s.trim().to_string();
                         if t.is_empty() { None } else { Some(t) }
                     }),
+                    branch_exclusions: r.1.branch_exclusions.clone(),
                 })
             });
             repos
@@ -707,7 +744,8 @@ pub fn create_default_config(path: &String) {
 ## Example repo configuration
 ##[sys-compare]
 ##path = "git@github.com:helloimalemur/sys-compare"
-##target_branch = "main"  # Optional; if omitted, PhantomCI will use the remote's default branch
+##target_branch = ""  # Optional; if empty or omitted, PhantomCI will monitor all branches
+##branch_exclusions = "main,dev"  # Optional; only used when target_branch is empty
 ##ssh_key_path = "/home/youruser/.ssh/id_ed25519"  # Optional: specify a custom SSH key
 
 "#;
@@ -767,6 +805,9 @@ mod tests {
         fn remote_default_branch(&self, _work_dir: &str) -> Option<String> {
             self.default.clone()
         }
+        fn remote_branches(&self, _work_dir: &str) -> Vec<String> {
+            self.present.clone()
+        }
     }
 
     fn dummy_repo() -> Repo {
@@ -776,8 +817,9 @@ mod tests {
             work_dir: "/tmp/phantom_ci-test".into(),
             last_sha: None,
             target_branch: "".into(),
-            triggered: false,
+            triggered_branches: vec![],
             ssh_key_path: None,
+            branch_exclusions: None,
         }
     }
 
