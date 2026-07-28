@@ -13,6 +13,7 @@ services:
       retries: 30
 
   phantom_ci:
+    image: phantomci:latest
     build:
       context: ../
       dockerfile: docker/Dockerfile

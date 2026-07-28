@@ -1,6 +1,13 @@
-#!/bin/bash
-set -eo pipefail
-DOCKER_COMPOSE="docker/docker-compose.yaml"
-## build and upload image
-#docker-compose --env-file /etc/vultr/registry -f $DOCKER_COMPOSE build
-docker-compose -f $DOCKER_COMPOSE build
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+PROJECT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+cd "$PROJECT_DIR"
+
+IMAGE="${PHANTOMCI_IMAGE:-phantomci:latest}"
+
+docker build \
+  --file docker/Dockerfile \
+  --tag "$IMAGE" \
+  .

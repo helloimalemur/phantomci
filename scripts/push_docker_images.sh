@@ -1,29 +1,45 @@
-#!/bin/bash
-set -eo pipefail
+#!/usr/bin/env bash
+set -euo pipefail
 
-source /etc/vultr/registry
-echo $VULTR_REGISTRY_PASS | docker login "$VULTR_REGISTRY_HOST" --username="$VULTR_REGISTRY_USER" --password-stdin
-TAG="latest"
-DOCKER_COMPOSE="docker/docker-compose.yaml"
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+PROJECT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+cd "$PROJECT_DIR"
 
-readarray -t IMAGES < <(
-  yq -r '.services[].image' "$DOCKER_COMPOSE" \
-    | sort -u
-)
+# Keep compatibility with the old deployment host, while allowing Kubernetes
+# to provide credentials through /root/.docker/config.json or environment.
+REGISTRY_FILE="${PHANTOMCI_REGISTRY_FILE:-/etc/vultr/registry}"
+if [[ -f "$REGISTRY_FILE" ]]; then
+  # shellcheck disable=SC1090
+  source "$REGISTRY_FILE"
+fi
 
-for IMAGE in "${IMAGES[@]}"; do
-  set +e
-  if docker image inspect "$IMAGE" >/dev/null 2>&1; then
-    echo "$IMAGE exists"
-    echo "IMAGE: $IMAGE"
-    IMAGE_GUID=$(curl -s -H "Authorization: Bearer ${VULTR_API_KEY}" "https://api.vultr.com/v2/registry/${VULTR_REGISTRY_ID}/repositories" | jq -r --arg img "$IMAGE" '.repositories[] | select(.name == ("komodoro/" + $img)) | .image')
-    echo "deleting IMAGE_GUID: $IMAGE_GUID"
-    curl -i -X DELETE -H "Authorization: Bearer ${VULTR_API_KEY}" "https://api.vultr.com/v2/registry/${VULTR_REGISTRY_ID}/repository/$IMAGE_GUID"
-    set -e
-    sleep 3s
-    docker tag "$IMAGE" "$VULTR_REGISTRY_HOST/$IMAGE:$TAG"
-    docker push "$VULTR_REGISTRY_HOST/$IMAGE:$TAG"
-  else
-    echo "$IMAGE missing"
-  fi
-done
+IMAGE="${PHANTOMCI_IMAGE:-phantomci:latest}"
+REGISTRY_HOST="${PHANTOMCI_REGISTRY_HOST:-${VULTR_REGISTRY_HOST:-}}"
+
+if [[ -n "${PHANTOMCI_PUSH_IMAGE:-}" ]]; then
+  PUSH_IMAGE="$PHANTOMCI_PUSH_IMAGE"
+elif [[ -n "$REGISTRY_HOST" ]]; then
+  PUSH_IMAGE="${REGISTRY_HOST%/}/$IMAGE"
+else
+  PUSH_IMAGE="$IMAGE"
+fi
+
+REGISTRY_USER="${PHANTOMCI_REGISTRY_USER:-${VULTR_REGISTRY_USER:-}}"
+REGISTRY_PASSWORD="${PHANTOMCI_REGISTRY_PASSWORD:-${VULTR_REGISTRY_PASS:-}}"
+if [[ -n "$REGISTRY_USER" && -n "$REGISTRY_PASSWORD" && -n "$REGISTRY_HOST" ]]; then
+  printf '%s\n' "$REGISTRY_PASSWORD" |
+    docker login "$REGISTRY_HOST" \
+      --username="$REGISTRY_USER" \
+      --password-stdin
+fi
+
+if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
+  echo "Docker image '$IMAGE' is missing; run build_docker_images.sh first" >&2
+  exit 1
+fi
+
+if [[ "$PUSH_IMAGE" != "$IMAGE" ]]; then
+  docker tag "$IMAGE" "$PUSH_IMAGE"
+fi
+
+docker push "$PUSH_IMAGE"
