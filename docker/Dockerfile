@@ -3,9 +3,20 @@ FROM rust:bookworm
 # Use the key at runtime by default, disable host key checking for automation
 ENV GIT_SSH_COMMAND="ssh -i /root/.ssh/id_ed25519 -o StrictHostKeyChecking=no"
 
-# Ensure needed tools exist at runtime
+# Ensure workflow build and deployment tools exist at runtime. Rust provides
+# rustc and cargo; the Debian packages cover Docker Compose v1 compatibility,
+# native builds, Kubernetes rollouts, Git, and SSH/SCP deployment commands.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates docker.io git openssh-client \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        docker-compose \
+        docker.io \
+        git \
+        kubernetes-client \
+        libssl-dev \
+        openssh-client \
+        pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 # Prepare SSH directory and generate a fallback key (can be overridden below)
