@@ -6,10 +6,8 @@ metadata:
 data:
   Repo.toml: |
     [your-repo]
-    path = "git@github.com:your/repo"
-    target_branch = ""
-    # branch_exclusions only functions when target_branch is empty or missing
-    branch_exclusions = "main,dev"
-    # Optional: explicit key path (the app also sets GIT_SSH_COMMAND)
+    path = "git@github.com:your-org/your-repo.git"
+    target_branch = "main"
+    # Optional: explicit key path (the image uses this for Git SSH access)
     ssh_key_path = "/root/.ssh/id_ed25519"
-      
+

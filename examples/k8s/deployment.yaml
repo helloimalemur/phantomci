@@ -13,18 +13,27 @@ spec:
       labels:
         app: phantomci
     spec:
+      # Uncomment when the runner image is in a private registry.
+      # imagePullSecrets:
+      #   - name: phantomci-image
       containers:
         - name: phantomci
-          image: your-registry/phantomci:0.2.1
+          image: your-registry/phantomci:0.2.3
           imagePullPolicy: IfNotPresent
-          # Optional webhook configuration
-          # env:
-          #   - name: DISCORD_WEBHOOK_URL
-          #     value: "https://discord.com/api/webhooks/..."
-          #   - name: SLACK_WEBHOOK_URL
-          #     value: "https://hooks.slack.com/services/..."
-          #   - name: CUSTOM_WEBHOOK_URL
-          #     value: "https://10.0.0.7/my/internal/api/..."
+          env:
+            - name: DOCKER_HOST
+              value: tcp://127.0.0.1:2375
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+            - name: WAIT_FOR_DOCKER
+              value: "true"
+            # Optional webhook configuration:
+            # - name: DISCORD_WEBHOOK_URL
+            #   value: "https://discord.com/api/webhooks/..."
+            # - name: SLACK_WEBHOOK_URL
+            #   value: "https://hooks.slack.com/services/..."
+            # - name: CUSTOM_WEBHOOK_URL
+            #   value: "https://10.0.0.7/my/internal/api/..."
           volumeMounts:
             - name: config
               mountPath: /root/.config/phantom_ci
@@ -36,6 +45,9 @@ spec:
               readOnly: true
             - name: cache
               mountPath: /root/.cache/phantom_ci
+            - name: registry-auth
+              mountPath: /root/.docker
+              readOnly: true
           resources:
             requests:
               cpu: "100m"
@@ -43,6 +55,33 @@ spec:
             limits:
               cpu: "500m"
               memory: "512Mi"
+        - name: docker
+          image: docker:27-dind
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+          securityContext:
+            privileged: true
+          ports:
+            - name: docker
+              containerPort: 2375
+          readinessProbe:
+            tcpSocket:
+              port: docker
+            initialDelaySeconds: 2
+            periodSeconds: 2
+            timeoutSeconds: 1
+            failureThreshold: 30
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+          volumeMounts:
+            - name: docker-data
+              mountPath: /var/lib/docker
       volumes:
         - name: config
           persistentVolumeClaim:
@@ -62,3 +101,14 @@ spec:
                 path: id_ed25519
         - name: cache
           emptyDir: {}
+        - name: docker-data
+          emptyDir: {}
+        # Optional: create this secret with `kubectl create secret docker-registry`
+        # to authenticate workflow `docker push` commands.
+        - name: registry-auth
+          secret:
+            secretName: phantomci-registry
+            optional: true
+            items:
+              - key: .dockerconfigjson
+                path: config.json

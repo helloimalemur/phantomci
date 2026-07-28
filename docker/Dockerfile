@@ -5,7 +5,7 @@ ENV GIT_SSH_COMMAND="ssh -i /root/.ssh/id_ed25519 -o StrictHostKeyChecking=no"
 
 # Ensure needed tools exist at runtime
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git openssh-client ca-certificates \
+    && apt-get install -y --no-install-recommends ca-certificates docker.io git openssh-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Prepare SSH directory and generate a fallback key (can be overridden below)
@@ -20,14 +20,19 @@ COPY . .
 COPY docker/key /root/keys/id_ed25519
 COPY docker/key.pub /root/keys/id_ed25519.pub
 
-# Use provided keys only if they are non-empty (fix inverted logic)
-RUN if (( $(stat -c%s /root/keys/id_ed25519) > 5 )); then cp /root/keys/id_ed25519 /root/.ssh/id_ed25519; fi \
- && if (( $(stat -c%s /root/keys/id_ed25519.pub) > 5 )); then cp /root/keys/id_ed25519.pub /root/.ssh/id_ed25519.pub; fi \
+# Use provided keys only if they are non-empty.
+RUN if [ -s /root/keys/id_ed25519 ]; then cp /root/keys/id_ed25519 /root/.ssh/id_ed25519; fi \
+ && if [ -s /root/keys/id_ed25519.pub ]; then cp /root/keys/id_ed25519.pub /root/.ssh/id_ed25519.pub; fi \
  && chmod 600 /root/.ssh/id_ed25519 \
  && [ -f /root/.ssh/id_ed25519.pub ] && chmod 644 /root/.ssh/id_ed25519.pub || true \
  && chown -R root:root /root/.ssh
 
-# Install the binary into PATH
-RUN cargo install --path ./
+# Wait for the DinD sidecar when this image is used by Compose or Kubernetes.
+COPY docker/entrypoint.sh /usr/local/bin/phantomci-entrypoint
+RUN chmod 755 /usr/local/bin/phantomci-entrypoint
 
+# Install the binary into PATH
+RUN cargo install --locked --path ./
+
+ENTRYPOINT ["/usr/local/bin/phantomci-entrypoint"]
 CMD ["phantom_ci"]

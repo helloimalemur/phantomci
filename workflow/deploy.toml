@@ -1,0 +1,6 @@
+[0]
+run = "bash -lc ./scripts/build_docker_images.sh"
+[1]
+run = "bash -lc ./scripts/push_docker_images.sh"
+[2]
+run = "bash -lc scripts/restart-deployments.sh"

@@ -1,13 +1,33 @@
-version: "3"
 services:
+  docker:
+    image: docker:27-dind
+    privileged: true
+    environment:
+      DOCKER_TLS_CERTDIR: ""
+    volumes:
+      - docker-data:/var/lib/docker
+    healthcheck:
+      test: ["CMD", "docker", "info"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
   phantom_ci:
-#    image: phantom_ci
-    container_name: phantom_ci
     build:
       context: ../
       dockerfile: docker/Dockerfile
-#    volumes:
-#      - app:/var/lib/phantom_ci
-#volumes:
-#  app:
-#    external: true
+    depends_on:
+      docker:
+        condition: service_healthy
+    environment:
+      DOCKER_HOST: tcp://docker:2375
+      DOCKER_TLS_CERTDIR: ""
+      WAIT_FOR_DOCKER: "true"
+    volumes:
+      - phantomci-config:/root/.config/phantom_ci
+      - phantomci-cache:/root/.cache/phantom_ci
+
+volumes:
+  docker-data:
+  phantomci-config:
+  phantomci-cache:

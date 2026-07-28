@@ -1,0 +1,5 @@
+[0]
+run = "docker build -t registry.example.com/your-org/your-image:latest ."
+
+[1]
+run = "docker push registry.example.com/your-org/your-image:latest"

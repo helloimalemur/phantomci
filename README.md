@@ -65,7 +65,9 @@ Rules:
 - Each step supports a single key: `run` (a shell command invoked without a shell).
 - Commands run with the working directory set to the checked-out repo directory.
 
-See `examples/workflow.toml` for a more complete example.
+See `examples/workflow.toml` for a Docker build-and-push example. Docker
+commands require the Docker CLI and daemon to be available to the runner; the
+provided Compose and Kubernetes examples configure a privileged DinD sidecar.
 
 ---
 
@@ -123,6 +125,21 @@ Requires [Rust](https://www.rust-lang.org/tools/install):
 ```bash
 cargo install phantom_ci
 ```
+
+## 🐳 Docker and Kubernetes
+
+Build and push the runner image, then use that image in
+`examples/k8s/deployment.yaml`:
+
+```bash
+docker build -f docker/Dockerfile -t registry.example.com/your-org/phantomci:0.2.3 .
+docker push registry.example.com/your-org/phantomci:0.2.3
+```
+
+For local DinD testing, run `docker compose -f docker/docker-compose.yaml up
+--build`. The Compose and Kubernetes examples run Docker in a privileged
+sidecar and set `DOCKER_HOST` to that daemon; do not mount the host Docker
+socket. See `examples/k8s/README.md` for SSH and registry secret setup.
 
 ---
 
