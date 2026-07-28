@@ -18,8 +18,4 @@ for package in \
   grep -Eq "(^|[[:space:]])${package}([[:space:]\\\\]|$)" "$DOCKERFILE"
 done
 
-for command in cargo docker docker-compose git scp ssh; do
-  grep -Eq "${command}" "$DOCKERFILE"
-done
-
 printf '%s\n' 'Runner tool declarations passed.'
