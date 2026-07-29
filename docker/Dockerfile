@@ -13,6 +13,12 @@ RUN apt-get update \
         docker-compose \
         docker.io \
         git \
+        yq \
+        jq \
+        make \
+        npm \
+        gcc \
+        python3.11 \
         kubernetes-client \
         libssl-dev \
         openssh-client \

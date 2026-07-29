@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+bash scripts/test_runner_tools.sh
+
 compose=(docker compose -f docker/docker-compose.yaml)
 trap '${compose[@]} down --volumes --remove-orphans' EXIT
 
