@@ -185,3 +185,7 @@ Contributions welcome — PRs encouraged!
 cargo clippy -- -D clippy::all
 cargo fmt -- --check
 ```
+
+## SSH host key verification
+
+By default the runner keeps `StrictHostKeyChecking=no` when it fetches repositories (backward compatible). Set `PHANTOMCI_KNOWN_HOSTS=/path/to/known_hosts` to verify the Git server's host key against a pinned file (`StrictHostKeyChecking=yes`); a mismatch fails the fetch instead of running commits from an impostor. `BatchMode=yes` is always set so ssh never waits for a prompt.

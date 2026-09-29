@@ -146,16 +146,12 @@ impl Repo {
     pub fn prepare(&mut self) {
         // clone if not exist
         println!("Preparing {}", self.name);
-        // Build SSH command, optionally with a specific identity file
-        let ssh_cmd = match self
-            .ssh_key_path
-            .as_ref()
-            .map(|s| s.trim())
-            .filter(|s| !s.is_empty())
-        {
-            Some(key) => format!("ssh -o StrictHostKeyChecking=no -i {}", key),
-            None => "ssh -o StrictHostKeyChecking=no".to_string(),
-        };
+        // Build SSH command, optionally with a specific identity file. Set
+        // PHANTOMCI_KNOWN_HOSTS=<file> to verify host keys against a pinned known_hosts file.
+        let ssh_cmd = build_git_ssh_command(
+            self.ssh_key_path.as_deref(),
+            env::var("PHANTOMCI_KNOWN_HOSTS").ok().as_deref(),
+        );
         env::set_var("GIT_SSH_COMMAND", ssh_cmd);
         if !Path::new(&self.work_dir).exists()
             && fs::create_dir_all(Path::new(&self.work_dir)).is_ok()
@@ -789,8 +785,63 @@ pub fn repo_work_dir(repo: &Repos) -> String {
     }
 }
 
+/// Single-quote `s` for the shell that interprets `GIT_SSH_COMMAND`.
+fn sh_quote(s: &str) -> String {
+    format!("'{}'", s.replace('\'', "'\\''"))
+}
+
+/// Compose `GIT_SSH_COMMAND`.
+///
+/// - With a non-empty `known_hosts` file the server's host key must match it
+///   (`StrictHostKeyChecking=yes`), so a machine-in-the-middle cannot feed the runner malicious
+///   commits (which would then be executed as build steps).
+/// - Without it the previous behaviour is kept (`StrictHostKeyChecking=no`) for compatibility.
+/// - `BatchMode=yes` makes ssh fail instead of waiting for a prompt that nobody can answer.
+pub(crate) fn build_git_ssh_command(key: Option<&str>, known_hosts: Option<&str>) -> String {
+    let mut cmd = String::from("ssh -o BatchMode=yes");
+    match known_hosts.map(str::trim).filter(|s| !s.is_empty()) {
+        Some(file) => cmd.push_str(&format!(
+            " -o StrictHostKeyChecking=yes -o UserKnownHostsFile={}",
+            sh_quote(file)
+        )),
+        None => cmd.push_str(" -o StrictHostKeyChecking=no"),
+    }
+    if let Some(k) = key.map(str::trim).filter(|s| !s.is_empty()) {
+        cmd.push_str(&format!(" -i {}", sh_quote(k)));
+    }
+    cmd
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn git_ssh_command_defaults_stay_compatible() {
+        assert_eq!(
+            build_git_ssh_command(None, None),
+            "ssh -o BatchMode=yes -o StrictHostKeyChecking=no"
+        );
+        assert_eq!(
+            build_git_ssh_command(Some("/root/.ssh/id_ed25519"), Some("  ")),
+            "ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i '/root/.ssh/id_ed25519'"
+        );
+    }
+
+    #[test]
+    fn git_ssh_command_pins_host_keys_when_configured() {
+        let c = build_git_ssh_command(Some("/k/id"), Some("/etc/phantomci/known_hosts"));
+        assert!(c.contains("StrictHostKeyChecking=yes"), "{c}");
+        assert!(c.contains("UserKnownHostsFile='/etc/phantomci/known_hosts'"), "{c}");
+        assert!(!c.contains("StrictHostKeyChecking=no"), "{c}");
+        assert!(c.ends_with("-i '/k/id'"), "{c}");
+    }
+
+    #[test]
+    fn git_ssh_command_quotes_paths() {
+        let c = build_git_ssh_command(Some("/a b/it's"), Some("/x y/known"));
+        assert!(c.contains("'/x y/known'"), "{c}");
+        assert!(c.contains("'/a b/it'\\''s'"), "{c}");
+    }
+
     use super::*;
 
     struct MockGitClient {
