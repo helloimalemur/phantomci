@@ -16,7 +16,8 @@ async fn main() {
     logging::init();
     if let Some(config) = default_config_path() {
         if let Err(e) = load_env_variables(config.as_str()) {
-            eprintln!("environment variables not loaded\n{}: {}", config, e);
+            // The .env file is optional; in Kubernetes the variables come from the pod spec.
+            eprintln!("optional env file not loaded: {}.env: {}", config, e);
         }
     }
     let mut state = AppState::new();

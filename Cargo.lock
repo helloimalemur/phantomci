@@ -1212,6 +1212,7 @@ dependencies = [
  "discord-webhook-lib",
  "dotenv",
  "env_logger",
+ "libc",
  "log",
  "rand",
  "rusqlite",

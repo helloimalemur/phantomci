@@ -7,9 +7,11 @@ use config::Config;
 use std::collections::HashMap;
 use std::env::consts::OS;
 use std::fs::OpenOptions;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::Path;
-use std::process::{exit, Command};
+use std::process::{exit, Command, Output, Stdio};
+use std::thread;
+use std::time::{Duration, Instant};
 use std::{env, fs};
 use tokio::sync::mpsc::Sender;
 
@@ -40,14 +42,14 @@ impl GitClient for SystemGitClient {
     }
 
     fn remote_default_branch(&self, work_dir: &str) -> Option<String> {
-        match Command::new("git")
-            .arg("-C")
-            .arg(work_dir)
-            .arg("remote")
-            .arg("show")
-            .arg("origin")
-            .output()
-        {
+        match network_git_output(
+            Command::new("git")
+                .arg("-C")
+                .arg(work_dir)
+                .arg("remote")
+                .arg("show")
+                .arg("origin"),
+        ) {
             Ok(output) if output.status.success() => {
                 let stdout = String::from_utf8_lossy(&output.stdout);
                 stdout
@@ -160,6 +162,17 @@ impl Repo {
             println!("Cloning: {}", self.work_dir);
             self.clone_repo();
             self.get_default_branch();
+        }
+
+        // A failed clone removes the work dir. Leave the retry to the poll loop: resolving the
+        // branch here would clone again at once (fetch_pull re-clones a missing repo) and keep
+        // the remaining repos waiting for a second timeout.
+        if !Path::new(&format!("{}/.git", self.work_dir)).exists() {
+            eprintln!(
+                "Skipping initial branch resolution for {}: not cloned yet, will retry on next poll",
+                self.name
+            );
+            return;
         }
 
         // Only resolve branch if target_branch is not empty
@@ -470,13 +483,14 @@ impl Repo {
         }
 
         // Now fetch normally
-        let out = Command::new("git")
-            .arg("-C")
-            .arg(&self.work_dir)
-            .arg("fetch")
-            .arg("--all")
-            .arg("--prune")
-            .output()?;
+        let out = network_git_output(
+            Command::new("git")
+                .arg("-C")
+                .arg(&self.work_dir)
+                .arg("fetch")
+                .arg("--all")
+                .arg("--prune"),
+        )?;
         if !out.status.success() {
             let code = out.status.code().unwrap_or(-1);
             let cmd_desc = format!("git -C {} fetch --all --prune", &self.work_dir);
@@ -512,14 +526,15 @@ impl Repo {
         }
 
         // Try a fast-forward pull; if it fails, hard reset to remote
-        let pull_output = Command::new("git")
-            .arg("-C")
-            .arg(&self.work_dir)
-            .arg("pull")
-            .arg("--ff-only")
-            .arg("origin")
-            .arg(branch)
-            .output()?;
+        let pull_output = network_git_output(
+            Command::new("git")
+                .arg("-C")
+                .arg(&self.work_dir)
+                .arg("pull")
+                .arg("--ff-only")
+                .arg("origin")
+                .arg(branch),
+        )?;
         if !pull_output.status.success() {
             eprintln!(
                 "git pull --ff-only failed for {}/{} (will try hard reset)\nstderr: {}\nstdout: {}",
@@ -588,14 +603,14 @@ impl Repo {
         if let Err(e) = std::fs::create_dir_all(&parent) {
             eprintln!("Failed to create directory {}: {}", parent.display(), e);
         }
-        match Command::new("git")
-            .arg("-C")
-            .arg(&parent)
-            .arg("clone")
-            .arg(&self.path)
-            .arg(&self.work_dir) // explicitly clone into target dir
-            .output()
-        {
+        match network_git_output(
+            Command::new("git")
+                .arg("-C")
+                .arg(&parent)
+                .arg("clone")
+                .arg(&self.path)
+                .arg(&self.work_dir), // explicitly clone into target dir
+        ) {
             Ok(output) => {
                 let git_repo_path = format!("{}/.git", self.work_dir);
                 if output.status.success() && Path::new(&git_repo_path).exists() {
@@ -634,14 +649,14 @@ impl Repo {
         let mut head_branch = "master".to_string();
 
         let cmd_desc = format!("git -C {} remote show origin", &self.work_dir);
-        match Command::new("git")
-            .arg("-C")
-            .arg(&self.work_dir)
-            .arg("remote")
-            .arg("show")
-            .arg("origin")
-            .output()
-        {
+        match network_git_output(
+            Command::new("git")
+                .arg("-C")
+                .arg(&self.work_dir)
+                .arg("remote")
+                .arg("show")
+                .arg("origin"),
+        ) {
             Ok(output) => {
                 if output.status.success() {
                     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -797,8 +812,99 @@ fn sh_quote(s: &str) -> String {
 ///   commits (which would then be executed as build steps).
 /// - Without it the previous behaviour is kept (`StrictHostKeyChecking=no`) for compatibility.
 /// - `BatchMode=yes` makes ssh fail instead of waiting for a prompt that nobody can answer.
+/// Upper bound for one network git command (clone, fetch, pull, `remote show`).
+/// Override with PHANTOMCI_GIT_TIMEOUT_SECS. The SSH keepalive in `build_git_ssh_command`
+/// catches a dead link within about a minute; this ceiling catches a server that keeps the
+/// SSH session alive while its git process hangs, which keepalives cannot detect.
+/// It must stay well above the slowest healthy clone: a 237 MB repo took 12.5 minutes,
+/// most of it silent while the server built the pack.
+const DEFAULT_GIT_NETWORK_TIMEOUT_SECS: u64 = 1800;
+
+fn git_network_timeout() -> Duration {
+    parse_timeout_secs(env::var("PHANTOMCI_GIT_TIMEOUT_SECS").ok().as_deref())
+}
+
+fn parse_timeout_secs(raw: Option<&str>) -> Duration {
+    Duration::from_secs(
+        raw.and_then(|s| s.trim().parse::<u64>().ok())
+            .filter(|&s| s > 0)
+            .unwrap_or(DEFAULT_GIT_NETWORK_TIMEOUT_SECS),
+    )
+}
+
+/// Run a git command that talks to the remote, bounded by `git_network_timeout()`.
+/// A hung clone used to block `Command::output()` forever, and because repos are prepared
+/// one after another, that stopped polling for every repo.
+fn network_git_output(cmd: &mut Command) -> std::io::Result<Output> {
+    output_with_timeout(cmd, git_network_timeout())
+}
+
+/// Like `Command::output()`, but kills the command (and the ssh it spawned) after `timeout`
+/// and returns an `ErrorKind::TimedOut` error.
+pub(crate) fn output_with_timeout(cmd: &mut Command, timeout: Duration) -> std::io::Result<Output> {
+    cmd.stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    // Own process group, so a timeout also kills the ssh child git started. That child
+    // inherits our stderr pipe, and the reader thread would block on it if only git died.
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        cmd.process_group(0);
+    }
+    let mut child = cmd.spawn()?;
+    let stdout_reader = drain_pipe(child.stdout.take());
+    let stderr_reader = drain_pipe(child.stderr.take());
+
+    let deadline = Instant::now() + timeout;
+    let status = loop {
+        if let Some(status) = child.try_wait()? {
+            break status;
+        }
+        if Instant::now() >= deadline {
+            #[cfg(unix)]
+            // SAFETY: kill(2) with a negative pid signals that process group. The group id is
+            // the pid of our child, which has not been reaped yet, so it is still ours.
+            unsafe {
+                libc::kill(-(child.id() as libc::pid_t), libc::SIGKILL);
+            }
+            #[cfg(not(unix))]
+            let _ = child.kill();
+            let _ = child.wait();
+            let _ = stdout_reader.join();
+            let _ = stderr_reader.join();
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::TimedOut,
+                format!("timed out after {}s", timeout.as_secs()),
+            ));
+        }
+        thread::sleep(Duration::from_millis(100));
+    };
+    Ok(Output {
+        status,
+        stdout: stdout_reader.join().unwrap_or_default(),
+        stderr: stderr_reader.join().unwrap_or_default(),
+    })
+}
+
+fn drain_pipe<R: Read + Send + 'static>(pipe: Option<R>) -> thread::JoinHandle<Vec<u8>> {
+    thread::spawn(move || {
+        let mut buf = Vec::new();
+        if let Some(mut p) = pipe {
+            let _ = p.read_to_end(&mut buf);
+        }
+        buf
+    })
+}
+
+/// Transport options for every git-over-SSH call. Without them a connection that stalls
+/// after it is established (dropped NAT entry, packet loss, server stuck mid-pack) leaves
+/// ssh, and the git command waiting on it, blocked forever.
+const SSH_TRANSPORT_OPTS: &str =
+    "-o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=4";
+
 pub(crate) fn build_git_ssh_command(key: Option<&str>, known_hosts: Option<&str>) -> String {
-    let mut cmd = String::from("ssh -o BatchMode=yes");
+    let mut cmd = format!("ssh -o BatchMode=yes {}", SSH_TRANSPORT_OPTS);
     match known_hosts.map(str::trim).filter(|s| !s.is_empty()) {
         Some(file) => cmd.push_str(&format!(
             " -o StrictHostKeyChecking=yes -o UserKnownHostsFile={}",
@@ -818,11 +924,69 @@ mod tests {
     fn git_ssh_command_defaults_stay_compatible() {
         assert_eq!(
             build_git_ssh_command(None, None),
-            "ssh -o BatchMode=yes -o StrictHostKeyChecking=no"
+            "ssh -o BatchMode=yes -o ConnectTimeout=30 -o ServerAliveInterval=15 \
+             -o ServerAliveCountMax=4 -o StrictHostKeyChecking=no"
         );
         assert_eq!(
             build_git_ssh_command(Some("/root/.ssh/id_ed25519"), Some("  ")),
-            "ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i '/root/.ssh/id_ed25519'"
+            "ssh -o BatchMode=yes -o ConnectTimeout=30 -o ServerAliveInterval=15 \
+             -o ServerAliveCountMax=4 -o StrictHostKeyChecking=no -i '/root/.ssh/id_ed25519'"
+        );
+    }
+
+    #[test]
+    fn git_ssh_command_always_bounds_stalled_connections() {
+        for c in [
+            build_git_ssh_command(None, None),
+            build_git_ssh_command(Some("/k/id"), Some("/etc/phantomci/known_hosts")),
+        ] {
+            assert!(c.contains("-o ConnectTimeout=30"), "{c}");
+            assert!(c.contains("-o ServerAliveInterval=15"), "{c}");
+            assert!(c.contains("-o ServerAliveCountMax=4"), "{c}");
+        }
+    }
+
+    #[test]
+    fn timeout_secs_parsing() {
+        let default = Duration::from_secs(DEFAULT_GIT_NETWORK_TIMEOUT_SECS);
+        assert_eq!(parse_timeout_secs(None), default);
+        assert_eq!(parse_timeout_secs(Some("")), default);
+        assert_eq!(parse_timeout_secs(Some("0")), default);
+        assert_eq!(parse_timeout_secs(Some("abc")), default);
+        assert_eq!(parse_timeout_secs(Some(" 120 ")), Duration::from_secs(120));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn output_with_timeout_returns_output_of_fast_commands() {
+        let out = output_with_timeout(
+            Command::new("sh")
+                .arg("-c")
+                .arg("echo out; echo err >&2; exit 3"),
+            Duration::from_secs(10),
+        )
+        .unwrap();
+        assert_eq!(out.status.code(), Some(3));
+        assert_eq!(String::from_utf8_lossy(&out.stdout), "out\n");
+        assert_eq!(String::from_utf8_lossy(&out.stderr), "err\n");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn output_with_timeout_kills_hung_command_and_its_children() {
+        // The background `sleep` holds stderr open the way ssh does under git; the call must
+        // still return at the deadline instead of waiting for that pipe to close.
+        let start = Instant::now();
+        let err = output_with_timeout(
+            Command::new("sh").arg("-c").arg("sleep 300 & sleep 300"),
+            Duration::from_millis(500),
+        )
+        .unwrap_err();
+        assert_eq!(err.kind(), std::io::ErrorKind::TimedOut);
+        assert!(
+            start.elapsed() < Duration::from_secs(10),
+            "{:?}",
+            start.elapsed()
         );
     }
 
