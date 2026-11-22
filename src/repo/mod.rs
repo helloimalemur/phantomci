@@ -821,14 +821,18 @@ fn sh_quote(s: &str) -> String {
 const DEFAULT_GIT_NETWORK_TIMEOUT_SECS: u64 = 1800;
 
 fn git_network_timeout() -> Duration {
-    parse_timeout_secs(env::var("PHANTOMCI_GIT_TIMEOUT_SECS").ok().as_deref())
+    parse_timeout_secs(
+        env::var("PHANTOMCI_GIT_TIMEOUT_SECS").ok().as_deref(),
+        DEFAULT_GIT_NETWORK_TIMEOUT_SECS,
+    )
 }
 
-fn parse_timeout_secs(raw: Option<&str>) -> Duration {
+/// Seconds from an env value; empty, zero or unparsable values fall back to `default_secs`.
+pub(crate) fn parse_timeout_secs(raw: Option<&str>, default_secs: u64) -> Duration {
     Duration::from_secs(
         raw.and_then(|s| s.trim().parse::<u64>().ok())
             .filter(|&s| s > 0)
-            .unwrap_or(DEFAULT_GIT_NETWORK_TIMEOUT_SECS),
+            .unwrap_or(default_secs),
     )
 }
 
@@ -948,12 +952,14 @@ mod tests {
 
     #[test]
     fn timeout_secs_parsing() {
-        let default = Duration::from_secs(DEFAULT_GIT_NETWORK_TIMEOUT_SECS);
-        assert_eq!(parse_timeout_secs(None), default);
-        assert_eq!(parse_timeout_secs(Some("")), default);
-        assert_eq!(parse_timeout_secs(Some("0")), default);
-        assert_eq!(parse_timeout_secs(Some("abc")), default);
-        assert_eq!(parse_timeout_secs(Some(" 120 ")), Duration::from_secs(120));
+        let d = DEFAULT_GIT_NETWORK_TIMEOUT_SECS;
+        let default = Duration::from_secs(d);
+        assert_eq!(parse_timeout_secs(None, d), default);
+        assert_eq!(parse_timeout_secs(Some(""), d), default);
+        assert_eq!(parse_timeout_secs(Some("0"), d), default);
+        assert_eq!(parse_timeout_secs(Some("abc"), d), default);
+        assert_eq!(parse_timeout_secs(Some(" 120 "), d), Duration::from_secs(120));
+        assert_eq!(parse_timeout_secs(None, 7), Duration::from_secs(7));
     }
 
     #[cfg(unix)]

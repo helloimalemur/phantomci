@@ -1,14 +1,64 @@
 use crate::database::job::Job;
 use crate::database::joblog::JobLog;
-use crate::repo::Repo;
+use crate::repo::{parse_timeout_secs, Repo};
 use chrono::Local;
 use config::Config;
 use log::{error, info, warn};
 use std::collections::{BTreeMap, HashMap};
-use std::time::Instant;
+use std::process::{Output, Stdio};
+use std::time::{Duration, Instant};
 use tokio::process::Command;
 use tokio::sync::mpsc::Sender;
 use whoami::hostname;
+
+/// Upper bound for one workflow step. Override with PHANTOMCI_STEP_TIMEOUT_SECS.
+/// Steps run one after another for every repo, so a step that never exits (for example a
+/// download that stalls inside a `docker build`) would otherwise stop all builds.
+const DEFAULT_STEP_TIMEOUT_SECS: u64 = 7200;
+
+fn step_timeout() -> Duration {
+    parse_timeout_secs(
+        std::env::var("PHANTOMCI_STEP_TIMEOUT_SECS").ok().as_deref(),
+        DEFAULT_STEP_TIMEOUT_SECS,
+    )
+}
+
+/// Like `Command::output()`, but after `timeout` kills the step and everything it started,
+/// then returns an `ErrorKind::TimedOut` error.
+async fn run_step(cmd: &mut Command, timeout: Duration) -> std::io::Result<Output> {
+    cmd.stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .kill_on_drop(true);
+    // Own process group, so a timeout also reaches the processes the step started (such as
+    // a `docker build` client, whose exit cancels the build). They inherit the output pipes,
+    // so leaving them alive could keep the runner waiting.
+    #[cfg(unix)]
+    cmd.process_group(0);
+    let child = cmd.spawn()?;
+    let pid = child.id();
+    match tokio::time::timeout(timeout, child.wait_with_output()).await {
+        Ok(res) => res,
+        Err(_) => {
+            // Dropping the timed-out future already killed the step itself (kill_on_drop).
+            #[cfg(unix)]
+            if let Some(pid) = pid {
+                // SAFETY: kill(2) with a negative pid signals that process group. The kernel
+                // does not reuse an id while a group with that id still has members.
+                unsafe {
+                    libc::kill(-(pid as libc::pid_t), libc::SIGKILL);
+                }
+            }
+            Err(std::io::Error::new(
+                std::io::ErrorKind::TimedOut,
+                format!(
+                    "timed out after {}s; killed it and the processes it started",
+                    timeout.as_secs()
+                ),
+            ))
+        }
+    }
+}
 
 // Public entry point: parse workflow and run steps sequentially with fail-fast semantics
 pub async fn parse_workflow(file_path: &str, repo: Repo, tx_clone: Sender<String>) {
@@ -73,11 +123,13 @@ pub async fn parse_workflow(file_path: &str, repo: Repo, tx_clone: Sender<String
         };
         let args: Vec<String> = root_iter.map(|s| s.to_string()).collect();
 
-        let output_res = Command::new(&program)
-            .args(&args)
-            .current_dir(&repo.work_dir)
-            .output()
-            .await;
+        let output_res = run_step(
+            Command::new(&program)
+                .args(&args)
+                .current_dir(&repo.work_dir),
+            step_timeout(),
+        )
+        .await;
 
         let dt = t0.elapsed();
 
@@ -127,10 +179,11 @@ pub async fn parse_workflow(file_path: &str, repo: Repo, tx_clone: Sender<String
                 }
             }
             Err(e) => {
-                let msg = format!(
-                    "❌ {} failed to start in {:.2?}: {}",
-                    step_desc, dt, e
-                );
+                let msg = if e.kind() == std::io::ErrorKind::TimedOut {
+                    format!("❌ {} {}", step_desc, e)
+                } else {
+                    format!("❌ {} failed to start in {:.2?}: {}", step_desc, dt, e)
+                };
                 error!("{}", msg);
                 let mut log = JobLog { id: 0, repo: repo.path.clone(), log_message: msg.clone(), logged_at: Local::now().to_rfc3339() };
                 log.add_job_log();
@@ -189,5 +242,62 @@ fn get_command_from_config(path: String) -> HashMap<String, WorkflowCommand> {
         }
     } else {
         empty
+    }
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn run_step_returns_output_of_fast_steps() {
+        let out = run_step(
+            Command::new("sh")
+                .arg("-c")
+                .arg("echo out; echo err >&2; exit 3"),
+            Duration::from_secs(10),
+        )
+        .await
+        .unwrap();
+        assert_eq!(out.status.code(), Some(3));
+        assert_eq!(String::from_utf8_lossy(&out.stdout), "out\n");
+        assert_eq!(String::from_utf8_lossy(&out.stderr), "err\n");
+    }
+
+    #[tokio::test]
+    async fn run_step_kills_hung_step_and_its_children() {
+        // The background `sleep` stands in for a `docker build` client the step started: it
+        // holds the output pipes, and the timeout must still end the step on time.
+        let pid_file =
+            std::env::temp_dir().join(format!("phantomci-step-test-{}", std::process::id()));
+        let start = Instant::now();
+        let err = run_step(
+            Command::new("sh").arg("-c").arg(format!(
+                "sleep 300 & echo $! > '{}'; sleep 300",
+                pid_file.display()
+            )),
+            Duration::from_millis(500),
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(err.kind(), std::io::ErrorKind::TimedOut);
+        assert!(
+            start.elapsed() < Duration::from_secs(10),
+            "{:?}",
+            start.elapsed()
+        );
+
+        let child_pid = std::fs::read_to_string(&pid_file).unwrap();
+        let _ = std::fs::remove_file(&pid_file);
+        tokio::time::sleep(Duration::from_millis(200)).await;
+        // Gone, or a zombie waiting to be reaped by init: either way no longer running.
+        let stat = std::fs::read_to_string(format!("/proc/{}/stat", child_pid.trim()));
+        if let Ok(stat) = stat {
+            let state = stat.rsplit(')').next().unwrap_or("").trim_start();
+            assert!(
+                state.starts_with('Z'),
+                "child of the timed-out step still running: {stat}"
+            );
+        }
     }
 }
